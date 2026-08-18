@@ -1,0 +1,74 @@
+name: Public staging boundary
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    name: Boundary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate initial clean-history boundary
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const { execFileSync } = require("node:child_process");
+
+          const allowedInitialFiles = new Set([
+            ".github/workflows/boundary.yml",
+            "README.md",
+            "config/public-export-denylist.json",
+            "config/public-export-manifest.json",
+            "docs/OPEN_CORE_SCOPE.md"
+          ]);
+          const manifest = JSON.parse(fs.readFileSync("config/public-export-manifest.json", "utf8"));
+          const denylist = JSON.parse(fs.readFileSync("config/public-export-denylist.json", "utf8"));
+          const tracked = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
+            .split("\0")
+            .filter(Boolean);
+          const modes = execFileSync("git", ["ls-files", "-s"], { encoding: "utf8" });
+          const failures = [];
+
+          if (manifest.status !== "private-staging") failures.push("repository must remain private staging");
+          if (manifest.defaultDecision !== "deny") failures.push("manifest must default deny");
+          if (manifest.historyMode !== "clean-unrelated") failures.push("clean unrelated history is required");
+          if (manifest.automaticExportAllowed !== false) failures.push("automatic export must remain disabled");
+          if (manifest.licenseSelected !== false) failures.push("no public license is selected yet");
+          if (manifest.environmentTemplatePolicy?.copyCloudTemplate !== false) {
+            failures.push("cloud environment template copying must remain forbidden");
+          }
+          if (denylist.defaultDecision !== "deny") failures.push("denylist must default deny");
+          for (const path of tracked) {
+            if (!allowedInitialFiles.has(path)) failures.push("unexpected initial path: " + path);
+          }
+          for (const path of allowedInitialFiles) {
+            if (!tracked.includes(path)) failures.push("missing initial path: " + path);
+          }
+          if (/^120000 /m.test(modes)) failures.push("symlinks are not allowed");
+          if (tracked.some((path) => path.split("/").at(-1).startsWith(".env"))) {
+            failures.push("environment templates are not authorized in initial staging");
+          }
+          if (tracked.some((path) => path === ".var/private" || path.startsWith(".var/private/"))) {
+            failures.push("private local artifacts are not allowed");
+          }
+          if (tracked.some((path) => /(^|\/)LICENSE(?:\.|$)/i.test(path))) {
+            failures.push("license selection is deferred");
+          }
+
+          if (failures.length > 0) {
+            for (const failure of failures) console.error(failure);
+            process.exit(1);
+          }
+          console.log("PUBLIC_STAGING_BOUNDARY_VALID");
+          NODE

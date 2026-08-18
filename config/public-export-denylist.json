@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "defaultDecision": "deny",
+  "deniedCapabilities": [
+    "managed-provider-adapters",
+    "dataforseo-implementation",
+    "scrapecreators-implementation",
+    "production-query-generation",
+    "source-routing",
+    "source-lookback-policy",
+    "ranking-weights",
+    "numeric-quality-thresholds",
+    "production-prompts",
+    "model-inventory-and-fallback",
+    "cost-ceilings-and-prices",
+    "customer-outcomes",
+    "production-deployment-scripts",
+    "operations-records",
+    "private-dogfood-fixtures",
+    "secrets-and-environment-values"
+  ],
+  "deniedPathPatterns": [
+    ".env*",
+    "**/.env*",
+    ".var/private/**",
+    "**/live/**",
+    "**/deploy-*.sh",
+    "**/operations-records/**",
+    "**/dogfood-private/**"
+  ],
+  "deniedContentClasses": [
+    "provider-credential",
+    "database-credential",
+    "vercel-bypass-value",
+    "stripe-secret",
+    "supabase-privileged-credential",
+    "private-key",
+    "session-secret",
+    "api-key-pepper",
+    "private-price-or-cost",
+    "customer-or-operations-record"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "status": "private-staging",
+  "defaultDecision": "deny",
+  "historyMode": "clean-unrelated",
+  "automaticExportAllowed": false,
+  "licenseSelected": false,
+  "licenseReviewRequired": true,
+  "allowedReconstructedCategories": [
+    "pure-contracts-and-neutral-schemas",
+    "openapi",
+    "sdks",
+    "mcp-tool-contracts",
+    "agent-skill",
+    "provider-interfaces",
+    "synthetic-fixtures",
+    "provenance-and-evidence-types",
+    "generic-security-and-idempotency-utilities",
+    "methodology-and-source-limitations"
+  ],
+  "requiredControls": [
+    "clean-history",
+    "denylist-pass",
+    "secret-scan-pass",
+    "synthetic-data-only",
+    "dependency-boundary-review",
+    "qualified-license-review",
+    "founder-approval-before-publication"
+  ],
+  "environmentTemplatePolicy": {
+    "copyCloudTemplate": false,
+    "publicTemplateMustBeReconstructed": true,
+    "allowedConfigurationClasses": [
+      "public-sdk",
+      "fixture-engine",
+      "mcp-client",
+      "reference-framework"
+    ]
+  }
+}
