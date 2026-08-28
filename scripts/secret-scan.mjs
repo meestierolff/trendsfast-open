@@ -160,13 +160,20 @@ function scanBuffer(buffer, source, findings) {
   }
   const text = buffer.toString("utf8");
   for (const rule of RULES) {
-    const match = rule.expression.exec(text);
-    rule.expression.lastIndex = 0;
-    if (!match) continue;
-    const candidate = match[rule.valueIndex ?? 0] ?? "";
-    if (rule.valueIndex !== undefined && isPlaceholder(candidate)) continue;
-    findings.push(`${source}:${lineNumber(text, match.index)} rule=${rule.id}`);
-    if (findings.length >= MAX_FINDINGS) return;
+    const expression = new RegExp(
+      rule.expression.source,
+      rule.expression.flags.includes("g")
+        ? rule.expression.flags
+        : `${rule.expression.flags}g`,
+    );
+    for (const match of text.matchAll(expression)) {
+      const candidate = match[rule.valueIndex ?? 0] ?? "";
+      if (rule.valueIndex !== undefined && isPlaceholder(candidate)) continue;
+      findings.push(
+        `${source}:${lineNumber(text, match.index)} rule=${rule.id}`,
+      );
+      if (findings.length >= MAX_FINDINGS) return;
+    }
   }
 }
 

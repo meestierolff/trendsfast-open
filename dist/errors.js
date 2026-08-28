@@ -1,4 +1,4 @@
-import { SAFE_REMOTE_ERROR_MESSAGES } from "./constants.js";
+import { REMOTE_MCP_CONTRACT_VERSION, SAFE_REMOTE_ERROR_CODES, SAFE_REMOTE_ERROR_MESSAGES, } from "./constants.js";
 export class TrendsFastError extends Error {
     code;
     retryable;
@@ -11,18 +11,25 @@ export class TrendsFastError extends Error {
         this.retryAfterSeconds = options.retryAfterSeconds ?? null;
     }
 }
-export function safeRemoteError(code, retryable = false, retryAfterSeconds = null) {
-    const safeCode = typeof code === "string" && code in SAFE_REMOTE_ERROR_MESSAGES
-        ? code
-        : "INTERNAL_FAILURE";
-    const safeDelay = Number.isInteger(retryAfterSeconds) &&
+export function safeRemoteError(version, code, retryable = false, retryAfterSeconds = null) {
+    const validDelay = Number.isInteger(retryAfterSeconds) &&
         typeof retryAfterSeconds === "number" &&
         retryAfterSeconds > 0 &&
-        retryAfterSeconds <= 86_400
-        ? retryAfterSeconds
-        : null;
-    return new TrendsFastError(safeCode, SAFE_REMOTE_ERROR_MESSAGES[safeCode] ?? "The request failed safely.", {
-        retryable: retryable === true && safeCode === "RATE_LIMITED",
+        retryAfterSeconds <= 86_400;
+    const validCode = typeof code === "string" &&
+        SAFE_REMOTE_ERROR_CODES.includes(code) &&
+        Object.hasOwn(SAFE_REMOTE_ERROR_MESSAGES, code);
+    const validTuple = code === "RATE_LIMITED"
+        ? retryable === true && validDelay
+        : retryable === false && retryAfterSeconds === null;
+    const safeCode = version === REMOTE_MCP_CONTRACT_VERSION && validCode && validTuple
+        ? code
+        : "INTERNAL_FAILURE";
+    const safeDelay = safeCode === "RATE_LIMITED" ? retryAfterSeconds : null;
+    return new TrendsFastError(safeCode, SAFE_REMOTE_ERROR_MESSAGES[safeCode] ??
+        SAFE_REMOTE_ERROR_MESSAGES.INTERNAL_FAILURE ??
+        "The request could not be completed safely.", {
+        retryable: safeCode === "RATE_LIMITED",
         retryAfterSeconds: safeDelay,
     });
 }

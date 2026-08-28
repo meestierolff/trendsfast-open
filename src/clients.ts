@@ -10,8 +10,11 @@ import type {
 } from "./config.js";
 import {
   API_KEY_ENV,
-  readInstallState,
+  readInstallStateSnapshot,
   removeInstallState,
+  validateInstallPermissions,
+  validateInstallStatePaths,
+  trustedRootForPath,
   writeInstallState,
 } from "./config.js";
 import {
@@ -28,6 +31,44 @@ const ENTRY_ID = "trendsfast";
 const CODEX_BLOCK_BEGIN = "# >>> trendsfast-agent managed entry >>>";
 const CODEX_BLOCK_END = "# <<< trendsfast-agent managed entry <<<";
 
+function readManaged(paths: ConfigPaths, path: string): Promise<Buffer | null> {
+  return readRegularFile(path, trustedRootForPath(paths, path));
+}
+
+function ensureManagedDirectory(
+  paths: ConfigPaths,
+  path: string,
+  dryRun: boolean,
+): Promise<void> {
+  return ensurePrivateDirectory(path, dryRun, trustedRootForPath(paths, path));
+}
+
+function atomicManagedWrite(
+  paths: ConfigPaths,
+  path: string,
+  bytes: Uint8Array,
+  options: Parameters<typeof atomicWriteFile>[2] = {},
+): Promise<void> {
+  return atomicWriteFile(path, bytes, {
+    ...options,
+    trustedRoot: trustedRootForPath(paths, path),
+  });
+}
+
+function removeManagedFile(
+  paths: ConfigPaths,
+  path: string,
+  dryRun = false,
+  expectedSha256?: string,
+): Promise<void> {
+  return removeRegularFile(
+    path,
+    dryRun,
+    expectedSha256,
+    trustedRootForPath(paths, path),
+  );
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
@@ -41,6 +82,37 @@ function rejectDangerousKeys(value: unknown): void {
     if (["__proto__", "prototype", "constructor"].includes(key))
       throw new Error("Ambiguous configuration key.");
     rejectDangerousKeys(child);
+  }
+}
+
+function normalizedDecimal(value: string): string {
+  const match = /^(-?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/u.exec(value);
+  if (match === null || value.length > 1_000)
+    throw new Error("A JSON number cannot be represented losslessly.");
+  const [, sign = "", whole = "", fraction = "", exponentText = "0"] = match;
+  const parsedExponent = Number(exponentText);
+  if (!Number.isSafeInteger(parsedExponent))
+    throw new Error("A JSON number cannot be represented losslessly.");
+  let coefficient = BigInt(`${sign}${whole}${fraction}`);
+  let exponent = parsedExponent - fraction.length;
+  if (coefficient === 0n) return "0e0";
+  while (coefficient % 10n === 0n) {
+    coefficient /= 10n;
+    exponent += 1;
+  }
+  return `${coefficient}e${exponent}`;
+}
+
+function assertLosslessJsonNumber(token: string): void {
+  const parsed = Number(token);
+  if (!Number.isFinite(parsed) || Object.is(parsed, -0))
+    throw new Error("A JSON number cannot be represented losslessly.");
+  const rendered = JSON.stringify(parsed);
+  if (
+    rendered === undefined ||
+    normalizedDecimal(token) !== normalizedDecimal(rendered)
+  ) {
+    throw new Error("A JSON number cannot be represented losslessly.");
   }
 }
 
@@ -117,6 +189,8 @@ function assertNoDuplicateJsonKeys(text: string): void {
         text.slice(index),
       );
     if (!match) throw new Error("Invalid JSON configuration.");
+    if (!["true", "false", "null"].includes(match[0]))
+      assertLosslessJsonNumber(match[0]);
     index += match[0].length;
   };
   value();
@@ -295,18 +369,36 @@ export async function installClientConfigurations(options: {
   packageVersion: string;
   skillBytes?: Buffer;
   dryRun?: boolean;
+  /** Synthetic-test seam for deterministic concurrent-edit coverage. */
+  beforeCommit?: () => Promise<void>;
 }): Promise<InstallState> {
   assertPackageSource(options.packageSource);
-  await ensurePrivateDirectory(
+  await ensureManagedDirectory(
+    options.paths,
     options.paths.configDir,
     options.dryRun ?? false,
   );
   const unique = [...new Set(options.clients)];
-  const previousState = await readInstallState(options.paths);
+  const previousSnapshot = await readInstallStateSnapshot(options.paths);
+  const previousState = previousSnapshot?.state ?? null;
+  await validateInstallPermissions(options.paths, previousState);
+  if (previousState !== null) {
+    const previousClients = previousState.clients
+      .map((record) => record.client)
+      .sort()
+      .join("\0");
+    const selectedClients = [...unique].sort().join("\0");
+    if (selectedClients !== previousClients) {
+      throw new Error(
+        "The installed client selection cannot be changed in place; uninstall first.",
+      );
+    }
+  }
   const clientPlans: Array<{
     record: ClientInstallRecord;
     path: string;
     existing: Buffer | null;
+    existingSha256: string | null;
     installed: Buffer;
     needsBackup: boolean;
   }> = [];
@@ -314,19 +406,29 @@ export async function installClientConfigurations(options: {
     record: SkillInstallRecord;
     path: string;
     existing: Buffer | null;
+    existingSha256: string | null;
     installed: Buffer;
   }> = [];
 
   // Parse and validate every target before changing any target.
   for (const client of unique) {
     const path = clientPath(options.paths, client);
-    const existing = await readRegularFile(path);
+    const existing = await readManaged(options.paths, path);
     const managedPrevious = previousState?.clients.find(
       (record) => record.client === client && record.configPath === path,
     );
     if (managedPrevious !== undefined && existing === null) {
       throw new Error(
         `The previously managed ${client} configuration is missing.`,
+      );
+    }
+    if (
+      managedPrevious !== undefined &&
+      existing !== null &&
+      sha256(existing) !== managedPrevious.installedSha256
+    ) {
+      throw new Error(
+        `The managed ${client} configuration changed after installation; uninstall first to preserve unrelated edits.`,
       );
     }
     if (
@@ -371,6 +473,7 @@ export async function installClientConfigurations(options: {
     clientPlans.push({
       path,
       existing,
+      existingSha256: existing === null ? null : sha256(existing),
       installed,
       needsBackup:
         managedPrevious === undefined &&
@@ -389,7 +492,7 @@ export async function installClientConfigurations(options: {
     if (options.skillBytes !== undefined) {
       const installedSkill = options.skillBytes;
       const target = skillPath(options.paths, client);
-      const existingSkill = await readRegularFile(target);
+      const existingSkill = await readManaged(options.paths, target);
       const previousSkill = previousState?.skills.find(
         (record) =>
           record.client === client &&
@@ -397,18 +500,15 @@ export async function installClientConfigurations(options: {
           existingSkill !== null &&
           sha256(existingSkill) === record.installedSha256,
       );
-      if (
-        existingSkill !== null &&
-        !existingSkill.equals(installedSkill) &&
-        previousSkill === undefined
-      ) {
+      if (existingSkill !== null && previousSkill === undefined) {
         throw new Error(
-          `A different unmanaged TrendsFast skill already exists for ${client}.`,
+          `An unmanaged TrendsFast skill already exists for ${client}.`,
         );
       }
       skillPlans.push({
         path: target,
         existing: existingSkill,
+        existingSha256: existingSkill === null ? null : sha256(existingSkill),
         installed: installedSkill,
         record: {
           client,
@@ -416,20 +516,6 @@ export async function installClientConfigurations(options: {
           installedSha256: sha256(installedSkill),
         },
       });
-    }
-  }
-
-  for (const plan of clientPlans) {
-    if (plan.existing && plan.needsBackup) {
-      await ensurePrivateDirectory(
-        options.paths.backupsDir,
-        options.dryRun ?? false,
-      );
-      await writeByteExactBackup(
-        plan.record.backupPath!,
-        plan.existing,
-        options.dryRun ?? false,
-      );
     }
   }
 
@@ -447,12 +533,28 @@ export async function installClientConfigurations(options: {
     installedSha256: string;
   }> = [];
   try {
-    for (const plan of [...clientPlans, ...skillPlans]) {
+    await options.beforeCommit?.();
+    for (const plan of clientPlans) {
+      if (plan.existing && plan.needsBackup) {
+        await ensureManagedDirectory(
+          options.paths,
+          options.paths.backupsDir,
+          options.dryRun ?? false,
+        );
+        const backupPath = plan.record.backupPath!;
+        await writeByteExactBackup(
+          backupPath,
+          plan.existing,
+          options.dryRun ?? false,
+          trustedRootForPath(options.paths, backupPath),
+        );
+      }
       if (plan.existing?.equals(plan.installed)) continue;
-      await atomicWriteFile(plan.path, plan.installed, {
+      await atomicManagedWrite(options.paths, plan.path, plan.installed, {
         preserveMode: plan.existing !== null,
         mode: 0o600,
         dryRun: options.dryRun ?? false,
+        expectedSha256: plan.existingSha256,
       });
       if (!(options.dryRun ?? false)) {
         changed.push({
@@ -462,22 +564,92 @@ export async function installClientConfigurations(options: {
         });
       }
     }
-    await writeInstallState(options.paths, state, options.dryRun ?? false);
+    for (const plan of skillPlans) {
+      if (plan.existing?.equals(plan.installed)) continue;
+      await atomicManagedWrite(options.paths, plan.path, plan.installed, {
+        preserveMode: plan.existing !== null,
+        mode: 0o600,
+        dryRun: options.dryRun ?? false,
+        expectedSha256: plan.existingSha256,
+      });
+      if (!(options.dryRun ?? false)) {
+        changed.push({
+          path: plan.path,
+          existing: plan.existing,
+          installedSha256: sha256(plan.installed),
+        });
+      }
+    }
+    await writeInstallState(
+      options.paths,
+      state,
+      options.dryRun ?? false,
+      previousSnapshot?.sha256 ?? null,
+    );
   } catch (error) {
     for (const target of changed.reverse()) {
-      const current = await readRegularFile(target.path).catch(() => null);
+      const current = await readManaged(options.paths, target.path).catch(
+        () => null,
+      );
       if (current === null || sha256(current) !== target.installedSha256)
         continue;
       if (target.existing === null)
-        await removeRegularFile(target.path).catch(() => undefined);
+        await removeManagedFile(
+          options.paths,
+          target.path,
+          false,
+          target.installedSha256,
+        ).catch(() => undefined);
       else
-        await atomicWriteFile(target.path, target.existing, {
+        await atomicManagedWrite(options.paths, target.path, target.existing, {
           preserveMode: true,
+          expectedSha256: target.installedSha256,
         }).catch(() => undefined);
     }
     throw error;
   }
   return state;
+}
+
+/** Read-only proof that every managed local entry is still exact and usable. */
+export async function validateInstalledClientConfigurations(options: {
+  paths: ConfigPaths;
+  state: InstallState;
+}): Promise<void> {
+  validateInstallStatePaths(options.paths, options.state);
+  for (const record of options.state.clients) {
+    const current = await readManaged(options.paths, record.configPath);
+    if (current === null)
+      throw new Error(
+        `Installed client configuration is missing: ${basename(record.configPath)}`,
+      );
+    if (sha256(current) !== record.installedSha256) {
+      const expected =
+        record.client === "codex"
+          ? codexClientEntry(record.packageSource, record.credentialMode)
+          : jsonClientEntry(record.packageSource, record.credentialMode);
+      // Structural removal validates the exact managed entry while allowing
+      // unrelated user-owned configuration changes to remain present.
+      removeEntry(record.client, current, expected);
+    }
+    if (record.backupPath !== null) {
+      const backup = await readManaged(options.paths, record.backupPath);
+      if (
+        backup === null ||
+        !basename(record.backupPath).endsWith(`${sha256(backup)}.bak`)
+      ) {
+        throw new Error("The byte-exact client backup is missing or changed.");
+      }
+    }
+  }
+  for (const record of options.state.skills) {
+    const skill = await readManaged(options.paths, record.path);
+    if (skill === null || sha256(skill) !== record.installedSha256) {
+      throw new Error(
+        `The managed TrendsFast skill is missing or changed for ${record.client}.`,
+      );
+    }
+  }
 }
 
 function removeEntry(
@@ -526,14 +698,25 @@ export async function uninstallClientConfigurations(options: {
   paths: ConfigPaths;
   state: InstallState;
   dryRun?: boolean;
+  /** Synthetic-test seam for deterministic concurrent-edit coverage. */
+  beforeCommit?: () => Promise<void>;
 }): Promise<void> {
+  validateInstallStatePaths(options.paths, options.state);
+  const stateSnapshot = await readInstallStateSnapshot(options.paths);
+  if (
+    stateSnapshot === null ||
+    JSON.stringify(stateSnapshot.state) !== JSON.stringify(options.state)
+  ) {
+    throw new Error("Install state changed before uninstall.");
+  }
+  await validateInstallPermissions(options.paths, stateSnapshot.state);
   const plans: Array<{
     path: string;
     current: Buffer;
     replacement: Buffer | null;
   }> = [];
   for (const record of options.state.clients) {
-    const current = await readRegularFile(record.configPath);
+    const current = await readManaged(options.paths, record.configPath);
     if (!current)
       throw new Error(
         `Installed client configuration is missing: ${basename(record.configPath)}`,
@@ -542,9 +725,12 @@ export async function uninstallClientConfigurations(options: {
       if (record.originalExisted) {
         if (!record.backupPath)
           throw new Error("Install state is missing its backup reference.");
-        const backup = await readRegularFile(record.backupPath);
+        const backup = await readManaged(options.paths, record.backupPath);
         if (!backup)
           throw new Error("The byte-exact client backup is missing.");
+        if (!basename(record.backupPath).endsWith(`${sha256(backup)}.bak`)) {
+          throw new Error("The byte-exact client backup changed.");
+        }
         plans.push({ path: record.configPath, current, replacement: backup });
       } else {
         plans.push({ path: record.configPath, current, replacement: null });
@@ -559,7 +745,7 @@ export async function uninstallClientConfigurations(options: {
     }
   }
   for (const record of options.state.skills) {
-    const current = await readRegularFile(record.path);
+    const current = await readManaged(options.paths, record.path);
     if (current === null) continue;
     if (sha256(current) !== record.installedSha256) {
       throw new Error(
@@ -573,36 +759,51 @@ export async function uninstallClientConfigurations(options: {
       .map((record) => record.backupPath)
       .filter((path): path is string => path !== null),
   )) {
-    const backup = await readRegularFile(backupPath);
+    const backup = await readManaged(options.paths, backupPath);
     if (backup !== null)
       plans.push({ path: backupPath, current: backup, replacement: null });
   }
 
   const changed: typeof plans = [];
   try {
+    await options.beforeCommit?.();
     for (const plan of plans) {
       if (plan.replacement === null)
-        await removeRegularFile(plan.path, options.dryRun ?? false);
+        await removeManagedFile(
+          options.paths,
+          plan.path,
+          options.dryRun ?? false,
+          sha256(plan.current),
+        );
       else
-        await atomicWriteFile(plan.path, plan.replacement, {
+        await atomicManagedWrite(options.paths, plan.path, plan.replacement, {
           preserveMode: true,
           dryRun: options.dryRun ?? false,
+          expectedSha256: sha256(plan.current),
         });
       if (!(options.dryRun ?? false)) changed.push(plan);
     }
-    await removeInstallState(options.paths, options.dryRun ?? false);
+    await removeInstallState(
+      options.paths,
+      options.dryRun ?? false,
+      stateSnapshot.sha256,
+    );
   } catch (error) {
     for (const plan of changed.reverse()) {
-      const current = await readRegularFile(plan.path).catch(() => null);
+      const current = await readManaged(options.paths, plan.path).catch(
+        () => null,
+      );
       if (
         plan.replacement !== null &&
         (current === null || sha256(current) !== sha256(plan.replacement))
       )
         continue;
       if (plan.replacement === null && current !== null) continue;
-      await atomicWriteFile(plan.path, plan.current, {
+      await atomicManagedWrite(options.paths, plan.path, plan.current, {
         mode: 0o600,
         preserveMode: current !== null,
+        expectedSha256:
+          plan.replacement === null ? null : sha256(plan.replacement),
       }).catch(() => undefined);
     }
     throw error;

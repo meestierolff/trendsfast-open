@@ -80,12 +80,34 @@ const SYNTHETIC_DESCRIPTORS = Object.freeze(
       inputSchema: descriptorInput(name),
       outputSchema: {
         type: "object",
-        properties: {
-          ok: { type: "boolean" },
-          data: { type: "object", additionalProperties: true },
-        },
-        required: ["ok", "data"],
-        additionalProperties: false,
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              ok: { const: true },
+              data: { type: "object", additionalProperties: true },
+            },
+            required: ["ok", "data"],
+            additionalProperties: false,
+          },
+          {
+            type: "object",
+            properties: {
+              ok: { const: false },
+              error: {
+                type: "object",
+                properties: {
+                  code: { type: "string" },
+                  message: { type: "string" },
+                },
+                required: ["code", "message"],
+                additionalProperties: false,
+              },
+            },
+            required: ["ok", "error"],
+            additionalProperties: false,
+          },
+        ],
         $comment: REMOTE_MCP_CONTRACT_VERSION,
       },
       annotations: {
@@ -106,27 +128,49 @@ const SYNTHETIC_DESCRIPTORS = Object.freeze(
   }),
 );
 
-const SYNTHETIC_DESCRIPTOR_SHA256 = Object.freeze(
-  Object.fromEntries(
-    SYNTHETIC_DESCRIPTORS.map((descriptor) => [
+function descriptorHashes(descriptors) {
+  return Object.fromEntries(
+    descriptors.map((descriptor) => [
       descriptor.name,
       createHash("sha256").update(canonicalJson(descriptor)).digest("hex"),
     ]),
-  ),
+  );
+}
+
+const SYNTHETIC_DESCRIPTOR_SHA256 = Object.freeze(
+  descriptorHashes(SYNTHETIC_DESCRIPTORS),
 );
+
+function fixtureServerInfo() {
+  return {
+    name: "trendsfast-remote-mcp",
+    title: "TrendsFast",
+    version: "1.0.0",
+    description:
+      "Project-scoped access to Today’s Trend Briefs, confirmed context, immutable creative handoffs, and public source status. No publishing or scheduling.",
+    websiteUrl: "https://trendsfast.com/mcp",
+    icons: [
+      {
+        src: "https://trendsfast.com/icons/signal-sprite-512.png",
+        mimeType: "image/png",
+        sizes: ["512x512"],
+      },
+    ],
+  };
+}
+
+function fixtureResponseMeta() {
+  return {
+    "io.modelcontextprotocol/serverInfo": fixtureServerInfo(),
+  };
+}
 
 function discovery() {
   return {
     resultType: "complete",
     supportedVersions: [REMOTE_MCP_PROTOCOL_VERSION],
     capabilities: { tools: {} },
-    _meta: {
-      "io.modelcontextprotocol/serverInfo": {
-        name: "trendsfast-remote-mcp",
-        title: "TrendsFast synthetic fixture",
-        version: "1.0.0-test",
-      },
-    },
+    _meta: fixtureResponseMeta(),
   };
 }
 
@@ -140,7 +184,64 @@ function completeToolResult(name) {
     isError: false,
     structuredContent,
     content: [{ type: "text", text: JSON.stringify(structuredContent) }],
+    _meta: fixtureResponseMeta(),
   };
+}
+
+function completeToolError(isError = true) {
+  const structuredContent = {
+    ok: false,
+    error: {
+      code: "INVALID_TOOL_INPUT",
+      message: "The registered tool input is invalid.",
+    },
+  };
+  return {
+    resultType: "complete",
+    isError,
+    structuredContent,
+    content: [{ type: "text", text: JSON.stringify(structuredContent) }],
+    _meta: fixtureResponseMeta(),
+  };
+}
+
+function toolResultForMode(name, mode) {
+  if (mode === "tool-error") return completeToolError(true);
+  if (mode === "inconsistent-error-flag") return completeToolError(false);
+  const result = completeToolResult(name);
+  if (mode === "inconsistent-success-flag") result.isError = true;
+  if (mode === "invalid-structured-content") {
+    result.structuredContent = { ok: true, data: "not-an-object" };
+    result.content = [
+      { type: "text", text: JSON.stringify(result.structuredContent) },
+    ];
+  }
+  if (mode === "malicious-structured-content") {
+    result.structuredContent = {
+      ok: true,
+      data: { source: "synthetic-local-fixture", tool: name },
+      private_provider_payload: "must-not-escape",
+    };
+    result.content = [
+      { type: "text", text: JSON.stringify(result.structuredContent) },
+    ];
+  }
+  if (mode === "extra-content-block") {
+    result.content.push({ type: "text", text: "untrusted extra block" });
+  }
+  if (mode === "extra-content-field") {
+    result.content[0] = {
+      ...result.content[0],
+      annotations: { audience: ["assistant"] },
+    };
+  }
+  if (mode === "extra-result-field") {
+    result.private_provider_payload = "must-not-escape";
+  }
+  if (mode === "extra-meta-field") {
+    result._meta.private_provider_payload = "must-not-escape";
+  }
+  return result;
 }
 
 async function readRequest(request) {
@@ -155,6 +256,9 @@ async function startRemoteFixture(t) {
     requests: [],
     descriptors: SYNTHETIC_DESCRIPTORS,
     handlerErrors: [],
+    omitMetadataFor: null,
+    driftMetadataFor: null,
+    driftMetadataField: "description",
   };
   const server = createServer((request, response) => {
     void (async () => {
@@ -189,10 +293,16 @@ async function startRemoteFixture(t) {
         }, 250).unref();
         return;
       }
+      if (mode === "body-stall") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.flushHeaders();
+        return;
+      }
       if (mode === "safe-error") {
         response.writeHead(429, { "Content-Type": "application/json" });
         response.end(
           JSON.stringify({
+            version: REMOTE_MCP_CONTRACT_VERSION,
             code: "RATE_LIMITED",
             retryable: true,
             retry_after_seconds: 7,
@@ -209,12 +319,25 @@ async function startRemoteFixture(t) {
         result = {
           resultType: "complete",
           tools: state.descriptors,
-          _meta: discovery()._meta,
+          _meta: fixtureResponseMeta(),
         };
       } else if (body.method === "tools/call") {
-        result = completeToolResult(body.params?.name);
+        result = toolResultForMode(body.params?.name, mode);
       } else {
         throw new Error(`Unexpected synthetic method: ${String(body.method)}`);
+      }
+
+      if (state.omitMetadataFor === body.method) delete result._meta;
+      if (state.driftMetadataFor === body.method) {
+        result._meta = fixtureResponseMeta();
+        const info = result._meta["io.modelcontextprotocol/serverInfo"];
+        if (state.driftMetadataField === "websiteUrl") {
+          info.websiteUrl = "https://attacker.invalid/mcp";
+        } else if (state.driftMetadataField === "icon") {
+          info.icons[0].sizes = ["256x256"];
+        } else {
+          info.description = "drifted response identity";
+        }
       }
 
       const headers = { "Content-Type": "application/json" };
@@ -360,10 +483,45 @@ test("verifies exact seven ordered descriptors and rejects order, count, and has
   assert.deepEqual(fixture.state.handlerErrors, []);
 });
 
+test("rejects output schemas that declare untrusted dialects or remote references", async (t) => {
+  const fixture = await startRemoteFixture(t);
+  const maliciousSchemas = [
+    {
+      ...SYNTHETIC_DESCRIPTORS[0].outputSchema,
+      $schema: "https://attacker.invalid/schema",
+    },
+    {
+      ...SYNTHETIC_DESCRIPTORS[0].outputSchema,
+      $ref: "https://attacker.invalid/schema",
+    },
+  ];
+
+  for (const outputSchema of maliciousSchemas) {
+    const descriptors = SYNTHETIC_DESCRIPTORS.map((descriptor, index) =>
+      index === 0 ? { ...descriptor, outputSchema } : descriptor,
+    );
+    fixture.state.descriptors = descriptors;
+    await assert.rejects(
+      remoteClient(fixture, {
+        expectedDescriptorSha256: descriptorHashes(descriptors),
+      }).verifyContract(),
+      (error) => {
+        assert.equal(error?.code, "REMOTE_DESCRIPTOR_DRIFT");
+        assert.ok(!String(error).includes("attacker.invalid"));
+        return true;
+      },
+    );
+  }
+});
+
 test("performs one project-scoped read with exact protocol metadata and no session", async (t) => {
   const fixture = await startRemoteFixture(t);
   const client = remoteClient(fixture);
-  await client.verifyContract();
+  const verified = await client.verifyContract();
+  assert.deepEqual(
+    verified.discovery._meta["io.modelcontextprotocol/serverInfo"],
+    fixtureServerInfo(),
+  );
   const result = await client.callTool("trendsfast_project_context_get", {});
 
   assert.deepEqual(result.structuredContent, {
@@ -404,6 +562,102 @@ test("performs one project-scoped read with exact protocol metadata and no sessi
   assert.equal(call.headers["mcp-param-idempotency-key"], undefined);
   assert.deepEqual(call.body.params.arguments, {});
   assert.deepEqual(fixture.state.handlerErrors, []);
+});
+
+test("requires exact server identity metadata on discovery, listing, and every call", async (t) => {
+  const fixture = await startRemoteFixture(t);
+
+  fixture.state.omitMetadataFor = "server/discover";
+  await assert.rejects(
+    remoteClient(fixture).verifyContract(),
+    assertTrendsFastCode("REMOTE_CONTRACT_DRIFT"),
+  );
+
+  fixture.state.omitMetadataFor = null;
+  for (const field of ["description", "websiteUrl", "icon"]) {
+    fixture.state.driftMetadataFor = "server/discover";
+    fixture.state.driftMetadataField = field;
+    await assert.rejects(
+      remoteClient(fixture).verifyContract(),
+      assertTrendsFastCode("REMOTE_CONTRACT_DRIFT"),
+    );
+  }
+
+  fixture.state.driftMetadataFor = null;
+  fixture.state.driftMetadataField = "description";
+  fixture.state.omitMetadataFor = "tools/list";
+  await assert.rejects(
+    remoteClient(fixture).verifyContract(),
+    assertTrendsFastCode("REMOTE_CONTRACT_DRIFT"),
+  );
+
+  fixture.state.omitMetadataFor = null;
+  fixture.state.driftMetadataFor = "tools/list";
+  await assert.rejects(
+    remoteClient(fixture).verifyContract(),
+    assertTrendsFastCode("REMOTE_CONTRACT_DRIFT"),
+  );
+
+  fixture.state.driftMetadataFor = null;
+  const missingCallMetadata = remoteClient(fixture);
+  await missingCallMetadata.verifyContract();
+  fixture.state.omitMetadataFor = "tools/call";
+  await assert.rejects(
+    missingCallMetadata.callTool("trendsfast_project_context_get", {}),
+    assertTrendsFastCode("REMOTE_CONTRACT_DRIFT"),
+  );
+
+  fixture.state.omitMetadataFor = null;
+  const driftedCallMetadata = remoteClient(fixture);
+  await driftedCallMetadata.verifyContract();
+  fixture.state.driftMetadataFor = "tools/call";
+  await assert.rejects(
+    driftedCallMetadata.callTool("trendsfast_project_context_get", {}),
+    assertTrendsFastCode("REMOTE_CONTRACT_DRIFT"),
+  );
+});
+
+test("validates exact output schemas and binds isError to success and error envelopes", async (t) => {
+  const fixture = await startRemoteFixture(t);
+  const client = remoteClient(fixture);
+  await client.verifyContract();
+
+  fixture.state.mode = "tool-error";
+  const toolError = await client.callTool("trendsfast_project_context_get", {});
+  assert.equal(toolError.isError, true);
+  assert.deepEqual(toolError.structuredContent, {
+    ok: false,
+    error: {
+      code: "INVALID_TOOL_INPUT",
+      message: "The registered tool input is invalid.",
+    },
+  });
+
+  for (const mode of [
+    "inconsistent-success-flag",
+    "inconsistent-error-flag",
+    "invalid-structured-content",
+    "malicious-structured-content",
+    "extra-content-block",
+    "extra-content-field",
+    "extra-result-field",
+    "extra-meta-field",
+  ]) {
+    fixture.state.mode = mode;
+    await assert.rejects(
+      client.callTool("trendsfast_project_context_get", {}),
+      (error) => {
+        assert.equal(
+          error?.code,
+          mode === "extra-meta-field"
+            ? "REMOTE_CONTRACT_DRIFT"
+            : "REMOTE_PROTOCOL_FAILURE",
+        );
+        assert.ok(!String(error).includes("must-not-escape"));
+        return true;
+      },
+    );
+  }
 });
 
 test("rejects redirects and stateless-session drift", async (t) => {
@@ -451,6 +705,27 @@ test("bounds remote response, request, and timeout behavior", async (t) => {
   fixture.state.mode = "timeout";
   await assert.rejects(
     remoteClient(fixture, { timeoutMs: 20 }).verifyContract(),
+    assertTrendsFastCode("REMOTE_TIMEOUT"),
+  );
+
+  fixture.state.mode = "body-stall";
+  const bodyStallStartedAt = Date.now();
+  await assert.rejects(
+    remoteClient(fixture, { timeoutMs: 30 }).verifyContract(),
+    assertTrendsFastCode("REMOTE_TIMEOUT"),
+  );
+  assert.ok(Date.now() - bodyStallStartedAt < 1_000);
+
+  const ignoresAbortFetch = async () =>
+    new Response(new ReadableStream({ start() {} }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  await assert.rejects(
+    remoteClient(fixture, {
+      timeoutMs: 20,
+      fetch: ignoresAbortFetch,
+    }).verifyContract(),
     assertTrendsFastCode("REMOTE_TIMEOUT"),
   );
 

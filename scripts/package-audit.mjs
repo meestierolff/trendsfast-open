@@ -19,6 +19,7 @@ const MAX_UNPACKED_BYTES = 1_500_000;
 const REQUIRED_RUNTIME_DEPENDENCIES = new Map([
   ["@modelcontextprotocol/server", "2.0.0"],
   ["smol-toml", "1.8.0"],
+  ["zod", "4.4.3"],
 ]);
 
 const ALLOWED_DEV_DEPENDENCIES = new Map([

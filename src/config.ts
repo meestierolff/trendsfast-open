@@ -2,10 +2,13 @@ import { homedir } from "node:os";
 import { posix, win32 } from "node:path";
 import { lstat } from "node:fs/promises";
 import {
+  assertSafePathFromRoot,
   atomicWriteFile,
   ensurePrivateDirectory,
   readRegularFile,
+  readRegularFileWithMetadata,
   removeRegularFile,
+  sha256,
 } from "./files.js";
 
 export const API_KEY_ENV = "TRENDSFAST_API_KEY";
@@ -14,6 +17,7 @@ export type SupportedClient = "claude" | "codex" | "generic";
 
 export interface ConfigPaths {
   homeDir: string;
+  configRoot: string;
   configDir: string;
   credentialFile: string;
   stateFile: string;
@@ -82,6 +86,7 @@ export function resolveConfigPaths(
   );
   return {
     homeDir,
+    configRoot: base,
     configDir,
     credentialFile: paths.join(configDir, "api-key"),
     stateFile: paths.join(configDir, "install-state.json"),
@@ -105,6 +110,21 @@ export function resolveConfigPaths(
       "SKILL.md",
     ),
   };
+}
+
+export function trustedRootForPath(paths: ConfigPaths, target: string): string {
+  const pathApi = posix.isAbsolute(paths.homeDir) ? posix : win32;
+  const within = (root: string): boolean => {
+    const relative = pathApi.relative(root, target);
+    return (
+      relative !== ".." &&
+      !relative.startsWith(`..${pathApi.sep}`) &&
+      !pathApi.isAbsolute(relative)
+    );
+  };
+  if (within(paths.homeDir)) return paths.homeDir;
+  if (within(paths.configRoot)) return paths.configRoot;
+  throw new Error("Configuration target escapes its trusted roots.");
 }
 
 function validateApiKey(value: string | undefined): string {
@@ -131,6 +151,7 @@ export async function writeCredential(options: {
   await ensurePrivateDirectory(
     options.paths.configDir,
     options.dryRun ?? false,
+    trustedRootForPath(options.paths, options.paths.configDir),
   );
   await atomicWriteFile(
     options.paths.credentialFile,
@@ -138,6 +159,11 @@ export async function writeCredential(options: {
     {
       mode: 0o600,
       dryRun: options.dryRun ?? false,
+      expectedSha256: null,
+      trustedRoot: trustedRootForPath(
+        options.paths,
+        options.paths.credentialFile,
+      ),
     },
   );
 }
@@ -150,17 +176,19 @@ export async function readCredential(options: {
   if (options.mode === "environment") {
     return validateApiKey((options.env ?? process.env)[API_KEY_ENV]);
   }
-  const bytes = await readRegularFile(options.paths.credentialFile);
-  if (!bytes)
+  const snapshot = await readRegularFileWithMetadata(
+    options.paths.credentialFile,
+    trustedRootForPath(options.paths, options.paths.credentialFile),
+  );
+  if (!snapshot)
     throw new Error("The protected TrendsFast credential file is missing.");
   if (process.platform !== "win32") {
-    const mode = (await lstat(options.paths.credentialFile)).mode & 0o777;
-    if ((mode & 0o077) !== 0)
+    if ((snapshot.mode & 0o077) !== 0)
       throw new Error(
         "The TrendsFast credential file permissions are too broad.",
       );
   }
-  return validateApiKey(bytes.toString("utf8").replace(/\n$/u, ""));
+  return validateApiKey(snapshot.bytes.toString("utf8").replace(/\n$/u, ""));
 }
 
 function assertStateShape(value: unknown): asserts value is InstallState {
@@ -236,6 +264,74 @@ function assertStateShape(value: unknown): asserts value is InstallState {
   }
 }
 
+function expectedClientPath(
+  paths: ConfigPaths,
+  client: SupportedClient,
+): string {
+  return client === "claude"
+    ? paths.claudeConfig
+    : client === "codex"
+      ? paths.codexConfig
+      : paths.genericConfig;
+}
+
+function expectedSkillPath(
+  paths: ConfigPaths,
+  client: SupportedClient,
+): string {
+  return client === "claude"
+    ? paths.claudeSkill
+    : client === "codex"
+      ? paths.codexSkill
+      : paths.genericSkill;
+}
+
+/** Bind every persisted mutation target to the exact paths this install owns. */
+export function validateInstallStatePaths(
+  paths: ConfigPaths,
+  state: InstallState,
+): void {
+  const pathApi = posix.isAbsolute(paths.configDir) ? posix : win32;
+  const clients = new Set<SupportedClient>();
+  for (const record of state.clients) {
+    if (clients.has(record.client))
+      throw new Error("Install state contains a duplicate client target.");
+    clients.add(record.client);
+    if (record.configPath !== expectedClientPath(paths, record.client)) {
+      throw new Error("Install state contains an unowned client path.");
+    }
+    if (!record.originalExisted) {
+      if (record.backupPath !== null)
+        throw new Error("Install state contains an unexpected backup path.");
+      continue;
+    }
+    if (record.backupPath === null)
+      throw new Error("Install state is missing its confined backup path.");
+    const expectedPrefix = `${record.client}-${sha256(Buffer.from(record.configPath)).slice(0, 16)}-`;
+    const backupName = pathApi.basename(record.backupPath);
+    if (
+      pathApi.dirname(record.backupPath) !== paths.backupsDir ||
+      !backupName.startsWith(expectedPrefix) ||
+      !/^[0-9a-f]{64}\.bak$/u.test(backupName.slice(expectedPrefix.length))
+    ) {
+      throw new Error("Install state contains an unconfined backup path.");
+    }
+  }
+
+  const skills = new Set<SupportedClient>();
+  for (const record of state.skills) {
+    if (skills.has(record.client))
+      throw new Error("Install state contains a duplicate skill target.");
+    skills.add(record.client);
+    if (
+      !clients.has(record.client) ||
+      record.path !== expectedSkillPath(paths, record.client)
+    ) {
+      throw new Error("Install state contains an unowned skill path.");
+    }
+  }
+}
+
 export function serializeInstallState(state: InstallState): Buffer {
   assertStateShape(state);
   const text = JSON.stringify(state, null, 2) + "\n";
@@ -250,7 +346,17 @@ export function serializeInstallState(state: InstallState): Buffer {
 export async function readInstallState(
   paths: ConfigPaths,
 ): Promise<InstallState | null> {
-  const bytes = await readRegularFile(paths.stateFile);
+  return (await readInstallStateSnapshot(paths))?.state ?? null;
+}
+
+export async function readInstallStateSnapshot(paths: ConfigPaths): Promise<{
+  state: InstallState;
+  sha256: string;
+} | null> {
+  const bytes = await readRegularFile(
+    paths.stateFile,
+    trustedRootForPath(paths, paths.stateFile),
+  );
   if (!bytes) return null;
   let value: unknown;
   try {
@@ -259,7 +365,8 @@ export async function readInstallState(
     throw new Error("Install state is not valid JSON.");
   }
   assertStateShape(value);
-  return value;
+  validateInstallStatePaths(paths, value);
+  return { state: value, sha256: sha256(bytes) };
 }
 
 export async function validateInstallPermissions(
@@ -267,6 +374,14 @@ export async function validateInstallPermissions(
   state: InstallState | null,
 ): Promise<void> {
   if (state === null || process.platform === "win32") return;
+  await assertSafePathFromRoot(
+    trustedRootForPath(paths, paths.configDir),
+    paths.configDir,
+  );
+  await assertSafePathFromRoot(
+    trustedRootForPath(paths, paths.stateFile),
+    paths.stateFile,
+  );
   const directory = await lstat(paths.configDir);
   if (
     directory.isSymbolicLink() ||
@@ -275,13 +390,21 @@ export async function validateInstallPermissions(
   ) {
     throw new Error("The TrendsFast config directory permissions are unsafe.");
   }
-  const stateFile = await lstat(paths.stateFile);
-  if (
-    stateFile.isSymbolicLink() ||
-    !stateFile.isFile() ||
-    (stateFile.mode & 0o077) !== 0
-  ) {
+  const currentState = await readRegularFileWithMetadata(
+    paths.stateFile,
+    trustedRootForPath(paths, paths.stateFile),
+  );
+  if (currentState === null || (currentState.mode & 0o077) !== 0) {
     throw new Error("The TrendsFast install-state permissions are unsafe.");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(currentState.bytes.toString("utf8"));
+  } catch {
+    throw new Error("The TrendsFast install-state changed during validation.");
+  }
+  if (JSON.stringify(parsed) !== JSON.stringify(state)) {
+    throw new Error("The TrendsFast install-state changed during validation.");
   }
 }
 
@@ -289,16 +412,25 @@ export async function writeInstallState(
   paths: ConfigPaths,
   state: InstallState,
   dryRun = false,
+  expectedSha256?: string | null,
 ): Promise<void> {
   await atomicWriteFile(paths.stateFile, serializeInstallState(state), {
     mode: 0o600,
     dryRun,
+    ...(expectedSha256 === undefined ? {} : { expectedSha256 }),
+    trustedRoot: trustedRootForPath(paths, paths.stateFile),
   });
 }
 
 export async function removeInstallState(
   paths: ConfigPaths,
   dryRun = false,
+  expectedSha256?: string,
 ): Promise<void> {
-  await removeRegularFile(paths.stateFile, dryRun);
+  await removeRegularFile(
+    paths.stateFile,
+    dryRun,
+    expectedSha256,
+    trustedRootForPath(paths, paths.stateFile),
+  );
 }

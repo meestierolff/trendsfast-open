@@ -4,11 +4,11 @@ import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 import { createBridgeBackend, runBridge, } from "./bridge.js";
 import { AGENT_SKILL_VERSION, CONTENT_CAPABILITIES, PACKAGE_VERSION, REMOTE_MCP_CONTRACT_VERSION, REMOTE_MCP_PROTOCOL_VERSION, REMOTE_MCP_TOOL_NAMES, } from "./constants.js";
-import { readCredential, readInstallState, removeInstallState, resolveConfigPaths, validateInstallPermissions, writeCredential, } from "./config.js";
-import { installClientConfigurations, uninstallClientConfigurations, } from "./clients.js";
+import { readCredential, readInstallState, removeInstallState, resolveConfigPaths, trustedRootForPath, validateInstallPermissions, writeCredential, } from "./config.js";
+import { installClientConfigurations, uninstallClientConfigurations, validateInstalledClientConfigurations, } from "./clients.js";
 import { configuredEndpoint } from "./endpoint.js";
-import { safeErrorMessage, TrendsFastError } from "./errors.js";
-import { readRegularFile, removeEmptyDirectory, removeRegularFile, } from "./files.js";
+import { safeErrorMessage, safeRemoteError, TrendsFastError, } from "./errors.js";
+import { readRegularFile, removeEmptyDirectory, removeRegularFile, sha256, } from "./files.js";
 import { resolvePackageSource, validatePackageSource, } from "./package-source.js";
 const COMMANDS = [
     "install",
@@ -38,6 +38,23 @@ const VALUE_FLAGS = new Set([
 ]);
 const REPEATABLE_FLAGS = new Set(["--client", "--capability"]);
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const PUBLIC_SCAN_ID = /^[A-Za-z0-9_.-]{1,80}$/u;
+const BRIEF_ID_PREFIX = "brief_";
+const BRIEF_ID_VERSION = "today-trend-brief-v1";
+function briefIdBindsScan(briefId, scanId) {
+    if (!briefId.startsWith(BRIEF_ID_PREFIX) || !PUBLIC_SCAN_ID.test(scanId))
+        return false;
+    try {
+        const encoded = briefId.slice(BRIEF_ID_PREFIX.length);
+        const decoded = Buffer.from(encoded, "base64url").toString("utf8");
+        const expected = `${BRIEF_ID_VERSION}\0${scanId}`;
+        return (decoded === expected &&
+            Buffer.from(expected, "utf8").toString("base64url") === encoded);
+    }
+    catch {
+        return false;
+    }
+}
 function parseArguments(argv) {
     if (argv.some((argument) => /^--api[-_]?key(?:=|$)/i.test(argument))) {
         throw new TrendsFastError("SECRET_IN_ARGV", "API keys are never accepted in command-line arguments.");
@@ -95,55 +112,37 @@ function rejectFlags(parsed, allowed) {
 function isObject(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+function canonicalJson(value) {
+    if (Array.isArray(value))
+        return `[${value.map(canonicalJson).join(",")}]`;
+    if (isObject(value)) {
+        return `{${Object.keys(value)
+            .sort()
+            .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+            .join(",")}}`;
+    }
+    return JSON.stringify(value) ?? "undefined";
+}
 function unwrapResult(result) {
     if (!isObject(result.structuredContent)) {
         throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The tool result was not a structured object.");
     }
     const envelope = result.structuredContent;
+    if (result.isError !== (envelope.ok === false)) {
+        throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The tool error signal did not match its structured envelope.");
+    }
     if (envelope.ok === true && isObject(envelope.data))
         return envelope.data;
     if (envelope.ok === false && isObject(envelope.error)) {
-        const code = typeof envelope.error.code === "string"
-            ? envelope.error.code
-            : "INTERNAL_FAILURE";
-        const message = typeof envelope.error.message === "string"
-            ? envelope.error.message
-            : "The tool failed safely.";
-        throw new TrendsFastError(code, message, {
-            retryable: envelope.error.retryable === true,
-            retryAfterSeconds: typeof envelope.error.retry_after_seconds === "number"
-                ? envelope.error.retry_after_seconds
-                : null,
-        });
+        throw safeRemoteError(envelope.error.version, envelope.error.code, envelope.error.retryable, envelope.error.retry_after_seconds);
     }
     throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The tool result envelope was malformed.");
 }
-function findString(value, key) {
-    if (Array.isArray(value)) {
-        for (const child of value) {
-            const found = findString(child, key);
-            if (found !== null)
-                return found;
-        }
-        return null;
-    }
-    if (!isObject(value))
-        return null;
-    if (typeof value[key] === "string")
-        return value[key];
-    for (const child of Object.values(value)) {
-        const found = findString(child, key);
-        if (found !== null)
-            return found;
-    }
-    return null;
-}
-function containsVideo(value) {
-    if (Array.isArray(value))
-        return value.some(containsVideo);
-    if (!isObject(value))
-        return value === "VIDEO";
-    return Object.entries(value).some(([key, child]) => (key === "format" && child === "VIDEO") || containsVideo(child));
+function selectedBriefIsVideo(brief) {
+    if (isObject(brief.content_play))
+        return brief.content_play.format === "VIDEO";
+    return (isObject(brief.recommended_asset) &&
+        brief.recommended_asset.format === "VIDEO");
 }
 function outputJson(stdout, value) {
     stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -259,15 +258,29 @@ function toConfigClient(value) {
     throw new TrendsFastError("UNSUPPORTED_CLIENT", "Supported clients are generic, claude-code, and codex.");
 }
 async function backendFromConfig(dependencies) {
-    if (dependencies.backend !== undefined)
+    if (dependencies.backend !== undefined && dependencies.homeDir === undefined)
         return { backend: dependencies.backend, state: null };
     const env = dependencies.env ?? process.env;
     const paths = resolveConfigPaths(configPathOptions(dependencies, env));
     const state = await readInstallState(paths);
+    if (state === null) {
+        throw new TrendsFastError("INSTALL_REQUIRED", "Run the secure TrendsFast install command before using the live client.");
+    }
     await validateInstallPermissions(paths, state);
+    if (state.protocolVersion !== REMOTE_MCP_PROTOCOL_VERSION ||
+        state.packageVersion !== PACKAGE_VERSION ||
+        state.clients.length === 0 ||
+        state.skills.length !== state.clients.length ||
+        configuredEndpoint(state.endpoint).href !== state.endpoint) {
+        throw new TrendsFastError("INVALID_CONFIG", "The local TrendsFast install identity is stale or incomplete.");
+    }
+    await validateInstalledClientConfigurations({ paths, state });
     const mode = selectedCredentialMode(state);
     const apiKey = await readCredential({ mode, paths, env });
     const endpoint = configuredEndpoint(state?.endpoint).href;
+    if (dependencies.backend !== undefined) {
+        return { backend: dependencies.backend, state };
+    }
     const backend = await createBridgeBackend({
         endpoint,
         apiKey,
@@ -326,7 +339,10 @@ async function installCommand(parsed, dependencies) {
         packageVersion: PACKAGE_VERSION,
         skillBytes,
     };
-    let credentialCreated = false;
+    let credentialCreatedSha256 = null;
+    if (credentialMode === "environment" && !dryRun) {
+        await readCredential({ mode: "environment", paths, env });
+    }
     if (credentialMode === "file" && !dryRun) {
         const apiKey = env.TRENDSFAST_API_KEY ??
             (await (dependencies.hiddenInput ??
@@ -336,7 +352,7 @@ async function installCommand(parsed, dependencies) {
         }
         // Validate every client and skill target before persisting the credential.
         await installClientConfigurations({ ...installOptions, dryRun: true });
-        const existingCredential = await readRegularFile(paths.credentialFile);
+        const existingCredential = await readRegularFile(paths.credentialFile, trustedRootForPath(paths, paths.credentialFile));
         if (existingCredential !== null) {
             const existingValue = await readCredential({ mode: "file", paths, env });
             if (existingValue !== apiKey) {
@@ -345,7 +361,8 @@ async function installCommand(parsed, dependencies) {
         }
         else {
             await writeCredential({ paths, apiKey, consent: true });
-            credentialCreated = true;
+            credentialCreatedSha256 = sha256(Buffer.from(`${apiKey}\n`));
+            await dependencies.afterCredentialWrite?.();
         }
     }
     let state;
@@ -353,8 +370,8 @@ async function installCommand(parsed, dependencies) {
         state = await installClientConfigurations({ ...installOptions, dryRun });
     }
     catch (error) {
-        if (credentialCreated)
-            await removeRegularFile(paths.credentialFile).catch(() => undefined);
+        if (credentialCreatedSha256 !== null)
+            await removeRegularFile(paths.credentialFile, false, credentialCreatedSha256, trustedRootForPath(paths, paths.credentialFile)).catch(() => undefined);
         throw error;
     }
     outputJson(stdout, {
@@ -369,7 +386,8 @@ async function installCommand(parsed, dependencies) {
         skill_paths: state.skills.map((record) => record.path),
         credential_mode: rawMode,
         credential_path: credentialMode === "file" ? paths.credentialFile : null,
-        first_read_only_command: "trendsfast doctor --json",
+        first_read_only_command: `npx -y ${packageSource} doctor --json`,
+        first_read_only_argv: ["npx", "-y", packageSource, "doctor", "--json"],
         auto_publish: false,
         scheduling: false,
         ...(dryRun && many(parsed, "--client").length === 0
@@ -412,10 +430,10 @@ async function doctorCommand(parsed, dependencies) {
         stdout.write("TrendsFast doctor: PASS (discovery, 7 tools, context, latest, sources; read-only)\n");
 }
 async function maybeHandoff(backend, brief) {
-    if (!containsVideo(brief))
+    if (!selectedBriefIsVideo(brief))
         return null;
-    const briefId = findString(brief, "brief_id");
-    if (briefId === null) {
+    const briefId = brief.brief_id;
+    if (typeof briefId !== "string") {
         throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "A video brief did not expose its immutable brief ID.");
     }
     return unwrapResult(await backend.callTool("trendsfast_creative_handoff_get", {
@@ -480,6 +498,15 @@ async function createDemo(parsed, backend, dependencies) {
         if (!confirmed)
             throw new TrendsFastError("CANCELLED", "The billable scan was not confirmed.");
     }
+    const context = unwrapResult(await backend.callTool("trendsfast_project_context_get"));
+    const projectId = context.project_id;
+    const contextVersion = context.context_version;
+    if (typeof projectId !== "string" ||
+        projectId.length === 0 ||
+        typeof contextVersion !== "string" ||
+        contextVersion.length === 0) {
+        throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The project context did not expose its exact identity.");
+    }
     const createArguments = {
         intent: "CREATE_TODAYS_TREND_BRIEF",
         idempotency_key: key,
@@ -522,7 +549,34 @@ async function createDemo(parsed, backend, dependencies) {
         outputJson(stdout, { command: "demo", mode: "create", admission, status });
         throw new TrendsFastError("SCAN_FAILED", "The scan reached terminal FAILED; it was not retried.");
     }
-    const brief = unwrapResult(await backend.callTool("trendsfast_brief_latest_get"));
+    const latest = unwrapResult(await backend.callTool("trendsfast_brief_latest_get"));
+    const briefId = typeof latest.brief_id === "string" ? latest.brief_id : null;
+    if (briefId === null) {
+        throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The completed brief did not expose its immutable identity.");
+    }
+    if (!briefIdBindsScan(briefId, scanId)) {
+        throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The completed brief identity did not bind to the accepted scan.");
+    }
+    const brief = unwrapResult(await backend.callTool("trendsfast_brief_get", { brief_id: briefId }));
+    if (canonicalJson(brief) !== canonicalJson(latest)) {
+        throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The latest brief did not match its immutable brief read.");
+    }
+    const handoffData = isObject(brief.agent_handoff)
+        ? brief.agent_handoff
+        : null;
+    const confirmedCapabilities = handoffData?.content_capabilities;
+    if (brief.project_id !== projectId ||
+        brief.project_context_version_id !== contextVersion ||
+        brief.objective !== objective ||
+        (brief.lifecycle_state !== undefined &&
+            brief.lifecycle_state !== status.status) ||
+        !Array.isArray(confirmedCapabilities) ||
+        confirmedCapabilities.some((value) => typeof value !== "string") ||
+        [...confirmedCapabilities].sort().join("\0") !==
+            [...requestedCapabilities].sort().join("\0")) {
+        throw new TrendsFastError("REMOTE_PROTOCOL_FAILURE", "The completed brief did not bind to the requested project, context, lifecycle, objective, and capabilities.");
+    }
+    const sources = unwrapResult(await backend.callTool("trendsfast_sources_get"));
     const handoff = await maybeHandoff(backend, brief);
     outputJson(stdout, {
         command: "demo",
@@ -531,6 +585,7 @@ async function createDemo(parsed, backend, dependencies) {
         admission,
         status,
         brief,
+        sources,
         creative_handoff: handoff,
         create_calls: 1,
         approved: false,
@@ -594,18 +649,16 @@ async function uninstallCommand(parsed, dependencies) {
     else
         await removeInstallState(paths, dryRun);
     if (parsed.flags.has("--remove-credential"))
-        await removeRegularFile(paths.credentialFile, dryRun);
+        await removeRegularFile(paths.credentialFile, dryRun, undefined, trustedRootForPath(paths, paths.credentialFile));
+    const installedSkillDirectories = state?.skills.map((record) => dirname(record.path)) ?? [];
+    const genericSelected = state?.skills.some((record) => record.client === "generic");
     for (const directory of [
-        dirname(paths.genericSkill),
-        dirname(dirname(paths.genericSkill)),
+        ...installedSkillDirectories,
+        ...(genericSelected ? [dirname(dirname(paths.genericSkill))] : []),
         paths.backupsDir,
         paths.configDir,
-        dirname(paths.claudeSkill),
-        dirname(dirname(paths.claudeSkill)),
-        dirname(paths.codexSkill),
-        dirname(dirname(paths.codexSkill)),
     ]) {
-        await removeEmptyDirectory(directory, dryRun);
+        await removeEmptyDirectory(directory, dryRun, trustedRootForPath(paths, directory));
     }
     outputJson(stdout, {
         command: "uninstall",
@@ -626,6 +679,28 @@ function versionCommand(parsed, stdout) {
 export function createIdempotencyKey() {
     return randomUUID();
 }
+function normalizedDoctorError(error) {
+    if (error instanceof TrendsFastError)
+        return error;
+    return new TrendsFastError("LOCAL_INSTALL_INVALID", "The local TrendsFast install could not be verified. Uninstall and reinstall it before retrying Doctor.", { cause: error });
+}
+function outputDoctorFailure(stdout, error) {
+    outputJson(stdout, {
+        command: "doctor",
+        status: "FAIL",
+        checks: [{ name: "doctor_acceptance", status: "FAIL" }],
+        error: {
+            code: error.code,
+            message: error.message,
+            retryable: error.retryable,
+            retry_after_seconds: error.retryAfterSeconds,
+        },
+        read_only: true,
+        scans_created: 0,
+        provider_calls: 0,
+        model_calls: 0,
+    });
+}
 export async function runCli(argv, dependencies = {}) {
     const parsed = parseArguments(argv);
     switch (parsed.command) {
@@ -633,7 +708,16 @@ export async function runCli(argv, dependencies = {}) {
             await installCommand(parsed, dependencies);
             break;
         case "doctor":
-            await doctorCommand(parsed, dependencies);
+            try {
+                await doctorCommand(parsed, dependencies);
+            }
+            catch (error) {
+                const normalized = normalizedDoctorError(error);
+                if (parsed.flags.has("--json")) {
+                    outputDoctorFailure(dependencies.stdout ?? process.stdout, normalized);
+                }
+                throw normalized;
+            }
             break;
         case "demo":
             await demoCommand(parsed, dependencies);

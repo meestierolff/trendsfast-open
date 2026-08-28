@@ -108,6 +108,7 @@ function makePackageFixture(root) {
     dependencies: {
       "@modelcontextprotocol/server": "2.0.0",
       "smol-toml": "1.8.0",
+      zod: "4.4.3",
     },
     devDependencies: {},
     publishConfig: { access: "public", tag: "next" },
@@ -138,6 +139,12 @@ function makePackageFixture(root) {
         resolved: "https://registry.npmjs.org/smol-toml/-/smol-toml-1.8.0.tgz",
         integrity: syntheticIntegrity(),
         license: "BSD-3-Clause",
+      },
+      "node_modules/zod": {
+        version: "4.4.3",
+        resolved: "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
+        integrity: syntheticIntegrity(),
+        license: "MIT",
       },
     },
   };
@@ -297,6 +304,26 @@ test("secret scan detects a tracked working-tree secret without echoing it", () 
   }
 });
 
+test("secret scan continues after a placeholder to find a later assigned secret", () => {
+  const root = makeTemporaryDirectory();
+  const credential = ["q7V", "9LmN4pR2sT8uW3xY6zK1cD5fG"].join("");
+  try {
+    makePackageFixture(root);
+    initializeGitFixture(root);
+    writeFileSync(
+      join(root, "dist", "cli.js"),
+      `api_key = "YOUR_API_KEY_PLACEHOLDER";\nclient_secret = "${credential}";\n`,
+    );
+    const result = runPolicy(secretScanScript, root);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /tracked:dist\/cli\.js:2 rule=assigned-secret/);
+    assert.equal(result.stderr.includes(credential), false);
+    assert.equal(result.stdout.includes(credential), false);
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+
 test("secret scan detects a staged secret even when the working tree is clean", () => {
   const root = makeTemporaryDirectory();
   const credential = syntheticSecret();
@@ -391,6 +418,25 @@ test("package audit rejects lifecycle hooks and dependency drift", () => {
       result.stderr,
       /npm lifecycle script is forbidden: postinstall/,
     );
+    assert.match(
+      result.stderr,
+      /runtime dependencies must match the exact reviewed allowlist/,
+    );
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+
+test("package audit requires zod as an exact direct runtime dependency", () => {
+  const root = makeTemporaryDirectory();
+  try {
+    const { packageJson, packageLock } = makePackageFixture(root);
+    packageJson.dependencies.zod = "^4.4.3";
+    packageLock.packages[""].dependencies = packageJson.dependencies;
+    writeJson(join(root, "package.json"), packageJson);
+    writeJson(join(root, "package-lock.json"), packageLock);
+    const result = runPolicy(auditScript, root);
+    assert.notEqual(result.status, 0);
     assert.match(
       result.stderr,
       /runtime dependencies must match the exact reviewed allowlist/,
