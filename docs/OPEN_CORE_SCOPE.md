@@ -1,18 +1,16 @@
 # Open-Core Scope
 
-This private staging repository starts with an unrelated Git history. It is not a
-fork, filtered copy, or redistribution of the existing AGPL implementation.
+This public tooling repository started from one clean, unrelated founder-owned
+commit. It is not a fork, filtered copy, or redistribution of a private or
+historical implementation.
 
 ## Intended public scope
 
-- stable API and schema contracts;
-- SDKs and OpenAPI;
-- MCP tool contracts and a credential-free agent skill;
-- provider plugin interfaces;
-- synthetic reference fixtures;
-- evidence and provenance types;
-- generic state, security, and idempotency framework;
-- methodology and source limitations.
+- exact public Remote MCP identity and descriptor hashes;
+- a credential-free agent skill;
+- secure local client configuration and stdio tooling;
+- synthetic security and protocol fixtures; and
+- public boundary, provenance and onboarding documentation.
 
 ## Excluded private scope
 
@@ -21,10 +19,10 @@ fork, filtered copy, or redistribution of the existing AGPL implementation.
 - source routing and lookback policy;
 - production ranking weights and quality thresholds;
 - production prompts, model inventory, and fallback policy;
-- DistributionAsset implementation;
 - provider prices, cost ceilings, and abuse controls;
 - customer, outcome, operations, and dogfood records;
 - production deployment scripts and configuration values.
 
-No implementation may be copied from trendsfast-cloud until qualified review
-approves the license and dependency boundary.
+No private-cloud or historical-public implementation may be copied here.
+Future public capabilities require their own graph authorization, clean-room
+review, dependency review and license decision.
