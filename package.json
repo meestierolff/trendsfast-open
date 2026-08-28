@@ -1,0 +1,54 @@
+{
+  "name": "trendsfast-agent",
+  "version": "0.1.0-alpha.0",
+  "description": "Secure agent skill, installer and stdio bridge for TrendsFast Remote MCP",
+  "type": "module",
+  "license": "MIT",
+  "author": "Mees Tierolff",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meestierolff/trendsfast-open.git"
+  },
+  "homepage": "https://trendsfast.com/mcp",
+  "bugs": "https://github.com/meestierolff/trendsfast-open/issues",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "trendsfast": "bin/trendsfast.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "skills/trendsfast/SKILL.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "node scripts/lint.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "boundary": "node scripts/check-boundary.mjs",
+    "secret:scan": "node scripts/secret-scan.mjs",
+    "package:audit": "node scripts/package-audit.mjs",
+    "check": "npm run boundary && npm run format:check && npm run lint && npm run typecheck && npm test && npm run secret:scan && npm run package:audit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "smol-toml": "1.8.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "@types/node": "22.20.1",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  }
+}

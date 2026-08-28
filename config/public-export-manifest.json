@@ -1,22 +1,23 @@
 {
   "version": 1,
-  "status": "private-staging",
+  "status": "agent-tooling-v1",
+  "publicationClass": "PUBLIC_PROTOCOL_AND_CLIENT_TOOLING_ONLY",
   "defaultDecision": "deny",
   "historyMode": "clean-unrelated",
   "automaticExportAllowed": false,
-  "licenseSelected": false,
+  "licenseSelected": true,
+  "license": "MIT",
+  "licenseDecision": "docs/LICENSE_DECISION.md",
   "licenseReviewRequired": true,
+  "npmPublicationAllowed": false,
+  "npmPublicationGate": "qualified-license-review-and-authentication-pending",
   "allowedReconstructedCategories": [
-    "pure-contracts-and-neutral-schemas",
-    "openapi",
-    "sdks",
-    "mcp-tool-contracts",
+    "public-mcp-contract-descriptor-hashes",
     "agent-skill",
-    "provider-interfaces",
+    "client-and-stdio-tooling",
     "synthetic-fixtures",
-    "provenance-and-evidence-types",
-    "generic-security-and-idempotency-utilities",
-    "methodology-and-source-limitations"
+    "public-security-utilities",
+    "public-documentation"
   ],
   "requiredControls": [
     "clean-history",
@@ -30,11 +31,6 @@
   "environmentTemplatePolicy": {
     "copyCloudTemplate": false,
     "publicTemplateMustBeReconstructed": true,
-    "allowedConfigurationClasses": [
-      "public-sdk",
-      "fixture-engine",
-      "mcp-client",
-      "reference-framework"
-    ]
+    "allowedConfigurationClasses": ["mcp-client", "synthetic-test-fixture"]
   }
 }

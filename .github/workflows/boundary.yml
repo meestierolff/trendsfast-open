@@ -1,4 +1,4 @@
-name: Public staging boundary
+name: Public agent tooling boundary
 
 on:
   pull_request:
@@ -17,58 +17,47 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
-      - name: Validate initial clean-history boundary
-        shell: bash
-        run: |
-          node <<'NODE'
-          const fs = require("node:fs");
-          const { execFileSync } = require("node:child_process");
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
 
-          const allowedInitialFiles = new Set([
-            ".github/workflows/boundary.yml",
-            "README.md",
-            "config/public-export-denylist.json",
-            "config/public-export-manifest.json",
-            "docs/OPEN_CORE_SCOPE.md"
-          ]);
-          const manifest = JSON.parse(fs.readFileSync("config/public-export-manifest.json", "utf8"));
-          const denylist = JSON.parse(fs.readFileSync("config/public-export-denylist.json", "utf8"));
-          const tracked = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
-            .split("\0")
-            .filter(Boolean);
-          const modes = execFileSync("git", ["ls-files", "-s"], { encoding: "utf8" });
-          const failures = [];
+      - name: Install exact dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
 
-          if (manifest.status !== "private-staging") failures.push("repository must remain private staging");
-          if (manifest.defaultDecision !== "deny") failures.push("manifest must default deny");
-          if (manifest.historyMode !== "clean-unrelated") failures.push("clean unrelated history is required");
-          if (manifest.automaticExportAllowed !== false) failures.push("automatic export must remain disabled");
-          if (manifest.licenseSelected !== false) failures.push("no public license is selected yet");
-          if (manifest.environmentTemplatePolicy?.copyCloudTemplate !== false) {
-            failures.push("cloud environment template copying must remain forbidden");
-          }
-          if (denylist.defaultDecision !== "deny") failures.push("denylist must default deny");
-          for (const path of tracked) {
-            if (!allowedInitialFiles.has(path)) failures.push("unexpected initial path: " + path);
-          }
-          for (const path of allowedInitialFiles) {
-            if (!tracked.includes(path)) failures.push("missing initial path: " + path);
-          }
-          if (/^120000 /m.test(modes)) failures.push("symlinks are not allowed");
-          if (tracked.some((path) => path.split("/").at(-1).startsWith(".env"))) {
-            failures.push("environment templates are not authorized in initial staging");
-          }
-          if (tracked.some((path) => path === ".var/private" || path.startsWith(".var/private/"))) {
-            failures.push("private local artifacts are not allowed");
-          }
-          if (tracked.some((path) => /(^|\/)LICENSE(?:\.|$)/i.test(path))) {
-            failures.push("license selection is deferred");
-          }
+      - name: Lint public runtime boundary
+        run: node scripts/lint.mjs
 
-          if (failures.length > 0) {
-            for (const failure of failures) console.error(failure);
-            process.exit(1);
-          }
-          console.log("PUBLIC_STAGING_BOUNDARY_VALID");
-          NODE
+      - name: Validate clean-room boundary
+        run: node scripts/check-boundary.mjs
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify committed build artifacts
+        run: git diff --exit-code -- dist
+
+      - name: Typecheck package
+        run: npm run typecheck
+
+      - name: Run synthetic tests
+        run: npm test
+
+      - name: Scan tracked files, full history and tarball for secrets
+        run: npm run secret:scan
+
+      - name: Audit dependency, license and package allowlists
+        run: npm run package:audit
+
+      - name: Audit dependency vulnerabilities
+        run: npm audit --audit-level=high
+
+      - name: Verify npm package dry run
+        run: npm pack --dry-run --ignore-scripts
