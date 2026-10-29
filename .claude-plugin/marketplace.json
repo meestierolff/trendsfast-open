@@ -1,0 +1,12 @@
+{
+  "name": "trendsfast",
+  "description": "TrendsFast for Claude Code: the trendsfast skill and the remote MCP server in one plugin.",
+  "owner": { "name": "TrendsFast" },
+  "plugins": [
+    {
+      "name": "trendsfast",
+      "source": "./",
+      "description": "Sourced market evidence for a brand: customers, niche trends, competitors, video formats and AI-search answers."
+    }
+  ]
+}

@@ -6,11 +6,15 @@ historical implementation.
 
 ## Intended public scope
 
-- exact public Remote MCP identity and descriptor hashes;
-- a credential-free agent skill;
-- secure local client configuration and stdio tooling;
-- synthetic security and protocol fixtures; and
+- the credential-free `trendsfast` agent skill for the V3 API and MCP server;
+- a Claude Code plugin and marketplace that connect the remote MCP server;
+- `n8n-nodes-trendsfast`, an n8n community node over the public V3 REST API, with
+  example workflows;
+- synthetic fixtures and tests; and
 - public boundary, provenance and onboarding documentation.
+
+The V3 kit replaced the V1 CLI and stdio tooling on 2026-10-29, with the founder's
+approval of 2026-10-28. The V1 tooling remains at commit `9e7053b`.
 
 ## Excluded private scope
 

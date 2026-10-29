@@ -1,0 +1,213 @@
+{
+	"name": "TrendsFast: Monday trending topics with free recovery",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Monday trending topics, with free recovery\n\nUses your saved brand context, so **Trending** collects your brand's sources fresh.\n\n- **Trending for my brand** spends at most **25 credits** (0 for an empty result) and sends failures to its error output.\n- If no answer arrived, or TrendsFast could not confirm the outcome, the workflow waits a minute and reads the same request ID back for free. It never sends the paid request again.\n- Pick your **TrendsFast API** credential on the three TrendsFast nodes. Run it once by hand before you activate it.",
+				"height": 360,
+				"width": 520
+			},
+			"id": "0b56da58-1be5-4db9-9723-5c1911f11183",
+			"name": "How this works",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-60, -420]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "weeks",
+							"triggerAtDay": [1],
+							"triggerAtHour": 7
+						}
+					]
+				}
+			},
+			"id": "3cccb966-7ec6-4fbf-9e36-e6fdaac54c0a",
+			"name": "Every Monday at 07:00",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"resource": "account",
+				"operation": "getContext"
+			},
+			"id": "93946b0e-e948-46c6-9617-cf68264dfaf3",
+			"name": "Get brand context (free)",
+			"type": "n8n-nodes-trendsfast.trendsFast",
+			"typeVersion": 1,
+			"position": [220, 0],
+			"retryOnFail": false
+		},
+		{
+			"parameters": {
+				"jsCode": "// Continues only when TrendsFast already holds a confirmed brand context.\nconst context = $input.first().json.context;\nif (!context || context.kind !== 'CONFIRMED_CONTEXT' || !context.context_id) {\n  throw new Error('No confirmed brand context yet. Set up your brand in the TrendsFast dashboard first. Nothing was spent.');\n}\nreturn [{ json: { context_id: context.context_id } }];\n"
+			},
+			"id": "21f7dc7c-1c65-4a83-99b3-1143a2f70dcb",
+			"name": "Use the saved context",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [440, 0]
+		},
+		{
+			"parameters": {
+				"resource": "product",
+				"operation": "run",
+				"product": "niche",
+				"brandSource": "context",
+				"contextId": "={{ $json.context_id }}",
+				"maxCredits": 25,
+				"requestId": "",
+				"options": {}
+			},
+			"id": "467278eb-84c3-495d-b22d-1259c79f91e9",
+			"name": "Trending for my brand (25 credits)",
+			"type": "n8n-nodes-trendsfast.trendsFast",
+			"typeVersion": 1,
+			"position": [660, 0],
+			"retryOnFail": false,
+			"onError": "continueErrorOutput"
+		},
+		{
+			"parameters": {
+				"jsCode": "// Lists the top five trending items with their signal and, when known, their topic's stage.\nconst result = $input.first().json;\nconst items = Array.isArray(result.data?.items) ? result.data.items : [];\nconst lines = items.slice(0, 5).map((item, index) => {\n  const observation = item.current_observation ?? {};\n  const stage = item.topic_history?.state ? `, ${item.topic_history.state.toLowerCase()}` : '';\n  return `${index + 1}. ${observation.title ?? 'Untitled'} (${item.entity?.platform ?? 'unknown'}, ${item.signal}${stage})\\n   ${item.entity?.original_url ?? 'no link'}`;\n});\nreturn [{\n  json: {\n    text: lines.length\n      ? lines.join('\\n')\n      : 'Nothing is trending for your brand right now. An empty result costs 0 credits.',\n    result_id: result.result_id,\n    request_id: result.request_id,\n    replayed: result.usage?.replayed === true,\n  },\n}];\n"
+			},
+			"id": "052c410b-9396-4fa2-98fa-447317e69291",
+			"name": "Top five topics",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1100, -100]
+		},
+		{
+			"parameters": {
+				"jsCode": "// No answer, a 409 or a 5xx means the paid call may still have run: read it back for free.\nconst failed = $input.first().json;\nconst status = failed.http_status;\nconst outcomeUnknown = status === undefined || status === 409 || status >= 500;\nif (!failed.request_id || !outcomeUnknown) {\n  throw new Error(`TrendsFast did not run this request, so there is nothing to recover: ${failed.error}`);\n}\nreturn [{ json: { request_id: failed.request_id } }];\n"
+			},
+			"id": "59211b46-bcdc-45dd-ba1a-a0ff5ba8e8e2",
+			"name": "Decide whether to recover",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [880, 160]
+		},
+		{
+			"parameters": {
+				"amount": 1,
+				"unit": "minutes"
+			},
+			"id": "954e01c6-071e-4bd8-9de6-cce8b2f5a8ac",
+			"name": "Wait a minute",
+			"type": "n8n-nodes-base.wait",
+			"typeVersion": 1.1,
+			"position": [1100, 160],
+			"webhookId": "5a9c99f4-1d43-416a-a9fb-a07cdff6ee6d"
+		},
+		{
+			"parameters": {
+				"resource": "request",
+				"operation": "get",
+				"requestId": "={{ $json.request_id }}"
+			},
+			"id": "4b5c4e2f-c75c-4511-acb1-1e894d76a952",
+			"name": "Recover by request ID (free)",
+			"type": "n8n-nodes-trendsfast.trendsFast",
+			"typeVersion": 1,
+			"position": [1320, 160],
+			"retryOnFail": false
+		}
+	],
+	"connections": {
+		"Every Monday at 07:00": {
+			"main": [
+				[
+					{
+						"node": "Get brand context (free)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get brand context (free)": {
+			"main": [
+				[
+					{
+						"node": "Use the saved context",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Use the saved context": {
+			"main": [
+				[
+					{
+						"node": "Trending for my brand (25 credits)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Trending for my brand (25 credits)": {
+			"main": [
+				[
+					{
+						"node": "Top five topics",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Decide whether to recover",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Decide whether to recover": {
+			"main": [
+				[
+					{
+						"node": "Wait a minute",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Wait a minute": {
+			"main": [
+				[
+					{
+						"node": "Recover by request ID (free)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Recover by request ID (free)": {
+			"main": [
+				[
+					{
+						"node": "Top five topics",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"active": false,
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {},
+	"tags": []
+}

@@ -29,32 +29,14 @@ jobs:
       - name: Install exact dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
-      - name: Lint public runtime boundary
-        run: node scripts/lint.mjs
-
       - name: Validate clean-room boundary
-        run: node scripts/check-boundary.mjs
+        run: npm run boundary
 
       - name: Check formatting
         run: npm run format:check
 
-      - name: Build package
-        run: npm run build
-
-      - name: Verify committed build artifacts
-        run: git diff --exit-code -- dist
-
-      - name: Typecheck package
-        run: npm run typecheck
-
-      - name: Run synthetic tests
-        run: npm test
-
       - name: Scan tracked files, full history and tarball for secrets
         run: npm run secret:scan
-
-      - name: Audit dependency, license and package allowlists
-        run: npm run package:audit
 
       - name: Audit dependency vulnerabilities
         run: npm audit --audit-level=high

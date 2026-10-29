@@ -1,0 +1,5 @@
+{
+	"git": {
+		"tagName": "n8n-nodes-trendsfast@${version}"
+	}
+}
