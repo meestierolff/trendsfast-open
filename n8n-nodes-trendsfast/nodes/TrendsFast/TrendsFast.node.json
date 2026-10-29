@@ -1,0 +1,27 @@
+{
+	"node": "n8n-nodes-trendsfast.trendsFast",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Marketing & Content", "Analytics"],
+	"alias": [
+		"Trends",
+		"Social listening",
+		"Market research",
+		"Reddit",
+		"Competitors",
+		"Customer research",
+		"SEO"
+	],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://trendsfast.com/docs#auth"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://trendsfast.com/docs"
+			}
+		]
+	}
+}

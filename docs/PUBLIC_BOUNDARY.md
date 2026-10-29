@@ -2,44 +2,45 @@
 
 Classification: `PUBLIC_PROTOCOL_AND_CLIENT_TOOLING_ONLY`.
 
-This repository contains a clean-room agent client for the intentionally public
-TrendsFast Remote MCP contract. The remote service remains the sole application,
-entitlement, idempotency, cost-admission, research, ranking, and generation
-boundary.
+This repository holds the public TrendsFast agent kit. Its parts:
+
+- the `trendsfast` agent skill;
+- a Claude Code plugin that connects the remote MCP server;
+- `n8n-nodes-trendsfast`, an n8n community node for the V3 REST API.
+
+The remote service remains the only application, entitlement, idempotency, cost-admission, research, ranking and generation boundary.
 
 ## Allowed material
 
-- the public endpoint, protocol and contract versions;
-- exact public tool names and runtime-fetched public descriptors;
-- public input, output and safe-error contracts;
-- the CLI, local stdio bridge and supported-client configuration adapters;
-- the credential-free agent skill and public documentation;
-- synthetic fixtures and security, installation and transport tests.
+- The public endpoints: `https://trendsfast.com/api/mcp/v3` and `https://trendsfast.com/v3/...`.
+- Public tool names, operations, prices and safe error codes.
+- The published V3 OpenAPI document (`https://trendsfast.com/v3/openapi.json`), used as a test fixture.
+- The agent skill, the plugin and marketplace manifests, and the n8n node, credential and example workflows.
+- Synthetic fixtures, tests and public documentation.
 
 ## Excluded material
 
-This repository must not contain provider adapters or routing, query planning,
-scoring or trend thresholds, prompts, model selection or fallback logic,
-private cost or rate policy, production environment or database code, customer
-or private product fixtures, private release tooling or journals, raw production
-results, owner or user identity, or secrets.
+This repository must not contain any of the following:
 
-No source file is copied from a private-cloud or historical-public
-implementation. Public wire facts are independently reconstructed from the
-live descriptor and the reviewed intentionally public contract. Runtime
-descriptors are fetched from the authenticated endpoint and rejected unless
-their count, order, protocol identity, contract markers, and canonical SHA-256
-fingerprints all match contract V1 exactly.
+- provider adapters or routing, query planning, or scoring or trend thresholds;
+- prompts, model selection or fallback logic;
+- private cost or rate policy;
+- production environment or database code;
+- customer or private product fixtures;
+- private release tooling or journals;
+- raw production results, owner or user identity, or secrets.
+
+The kit is written as public material: client tooling over the public contract. It contains no private implementation. Its prices, tool names, paths and request bodies are checked against the live contract before each change is published, and its fixtures are synthetic.
 
 ## Provenance
 
-| Public fact                             | Source                                                                                      | Use                                                                       |
-| --------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Endpoint, protocol and contract version | Live `https://trendsfast.com/mcp` and reviewed Remote MCP V1 contract                       | Connection validation                                                     |
-| Seven ordered tool names                | Live `tools/list` and reviewed Remote MCP V1 contract                                       | Drift detection and skill guidance                                        |
-| Tool schemas and annotations            | Authenticated live `tools/list` plus canonical hashes of the reviewed public V1 descriptors | Fail-closed drift check and unchanged forwarding through the local bridge |
-| Public-safe errors                      | Live Remote MCP responses and reviewed Remote MCP V1 contract                               | Redacted CLI diagnostics                                                  |
-| Client configuration                    | Current official client documentation                                                       | Narrow, tested adapters                                                   |
+| Public fact                      | Source                                                   | Use                                     |
+| -------------------------------- | -------------------------------------------------------- | --------------------------------------- |
+| Endpoints and contract version   | Live `https://trendsfast.com/v3/openapi.json` (V3)       | Skill recipes, plugin and node requests |
+| Tool names and costs             | Live `tools/list` at `https://trendsfast.com/api/mcp/v3` | Skill guidance                          |
+| Product names, questions, prices | `https://trendsfast.com/pricing` and `llms.txt`          | Skill, plugin README and node catalog   |
+| Client and marketplace formats   | Current official Claude Code, OpenClaw and n8n docs      | Plugin manifests, skill gating, node    |
 
-Production payloads, credentials, private implementation and private evidence
-are never used as public fixtures.
+Production payloads, credentials, private implementation and private evidence are never used as public fixtures.
+
+The V1 CLI and stdio bridge that this repository used to carry remain available at commit `9e7053b`. They are legacy and receive no new work.

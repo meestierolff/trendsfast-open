@@ -1,0 +1,68 @@
+{
+	"name": "n8n-nodes-trendsfast",
+	"version": "0.1.0",
+	"description": "TrendsFast for n8n: where your customers talk, what is trending in your niche, what competitors post, which video formats work and what people search for, with sources and credit-safe request IDs.",
+	"license": "MIT",
+	"homepage": "https://trendsfast.com/docs",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"trendsfast",
+		"trends",
+		"social-listening",
+		"market-research",
+		"ai-agent-tool"
+	],
+	"author": {
+		"name": "TrendsFast",
+		"email": "mees@trendsfast.com",
+		"url": "https://trendsfast.com"
+	},
+	"bugs": {
+		"url": "https://trendsfast.com/support"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/meestierolff/trendsfast-open.git",
+		"directory": "n8n-nodes-trendsfast"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease",
+		"test": "npm run build && node --test \"test/**/*.test.mjs\"",
+		"scan:local": "npm run build && node scripts/scan-local.mjs",
+		"check": "npm run lint && npm test && npm run scan:local"
+	},
+	"files": [
+		"dist"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/TrendsFastApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/TrendsFast/TrendsFast.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "0.54.4",
+		"@types/node": "22.20.5",
+		"ajv": "8.20.0",
+		"ajv-formats": "3.0.1",
+		"eslint": "9.39.4",
+		"n8n-workflow": "2.45.2",
+		"prettier": "3.8.3",
+		"release-it": "21.1.1",
+		"typescript": "5.9.3"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}

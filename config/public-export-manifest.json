@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "status": "agent-tooling-v1",
+  "status": "agent-tooling-v3",
   "publicationClass": "PUBLIC_PROTOCOL_AND_CLIENT_TOOLING_ONLY",
   "defaultDecision": "deny",
   "historyMode": "clean-unrelated",

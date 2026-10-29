@@ -1,0 +1,53 @@
+# Lints, tests and builds n8n-nodes-trendsfast on every pull request and push to main.
+#
+# Rendered from the @n8n/node-cli 0.54.4 template, plus the offline test suite. Like publish.yml
+# it is inert here and runs only from a repository's root .github/workflows: move it to the
+# root of trendsfast-open with working-directory n8n-nodes-trendsfast and a matching
+# cache-dependency-path (README.md, "Before publishing"). Tests never call the TrendsFast API.
+
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "n8n-nodes-trendsfast/**"
+      - ".github/workflows/n8n-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "n8n-nodes-trendsfast/**"
+      - ".github/workflows/n8n-ci.yml"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: n8n-nodes-trendsfast
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+          cache-dependency-path: n8n-nodes-trendsfast/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Build and test
+        run: npm test

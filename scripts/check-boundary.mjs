@@ -16,15 +16,14 @@ const modes = execFileSync("git", ["ls-files", "-s"], { encoding: "utf8" });
 const failures = [];
 
 const allowedRoots = [
+  ".claude-plugin/",
   ".github/workflows/",
-  "bin/",
+  "assets/",
   "config/",
-  "dist/",
   "docs/",
+  "n8n-nodes-trendsfast/",
   "scripts/",
   "skills/",
-  "src/",
-  "tests/",
 ];
 const allowedRootFiles = new Set([
   ".gitignore",
@@ -34,11 +33,10 @@ const allowedRootFiles = new Set([
   "SECURITY.md",
   "package-lock.json",
   "package.json",
-  "tsconfig.json",
 ]);
 
-if (manifest.status !== "agent-tooling-v1")
-  failures.push("manifest status must be agent-tooling-v1");
+if (manifest.status !== "agent-tooling-v3")
+  failures.push("manifest status must be agent-tooling-v3");
 if (manifest.publicationClass !== "PUBLIC_PROTOCOL_AND_CLIENT_TOOLING_ONLY") {
   failures.push(
     "publication class must remain public protocol and client tooling only",

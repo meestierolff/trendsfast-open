@@ -1,0 +1,180 @@
+{
+	"name": "TrendsFast: weekly digest of where your customers talk",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Weekly: where are my customers talking?\n\n1. Set up your brand once in the TrendsFast dashboard. This workflow reads that saved brand context, which is where **Customers** collects your brand's own sources fresh.\n2. Pick your **TrendsFast API** credential on the three TrendsFast nodes.\n3. The brand context and the quote are free. **Find customer conversations** spends at most **10 credits** a run, and 0 when nothing matches. **Check context and price** stops before anything is spent if there is no saved brand or the price is above 10.\n4. Add your own Email or Slack node after **Send it your way**. No recipient is set here.\n5. Run it once by hand, then activate it. The schedule (Monday 08:00) does nothing while the workflow is inactive.\n\nA failed run shows its request ID. Read it for free with **Request > Get by Request ID** before you run it again.",
+				"height": 420,
+				"width": 520
+			},
+			"id": "51adc4c4-4567-4625-ad6c-7e1ed58e5f8b",
+			"name": "How this works",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-60, -480]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "weeks",
+							"triggerAtDay": [1],
+							"triggerAtHour": 8
+						}
+					]
+				}
+			},
+			"id": "cb397747-ca45-4375-8808-bfd5962fcf10",
+			"name": "Every Monday at 08:00",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"resource": "account",
+				"operation": "getContext"
+			},
+			"id": "af787de2-1c8a-47e0-9041-c96698a95a06",
+			"name": "Get brand context (free)",
+			"type": "n8n-nodes-trendsfast.trendsFast",
+			"typeVersion": 1,
+			"position": [220, 0],
+			"retryOnFail": false
+		},
+		{
+			"parameters": {
+				"resource": "product",
+				"operation": "getQuote",
+				"product": "customers"
+			},
+			"id": "44be7924-112b-42ac-af02-86e80a4b71b3",
+			"name": "Get the Customers price (free)",
+			"type": "n8n-nodes-trendsfast.trendsFast",
+			"typeVersion": 1,
+			"position": [440, 0],
+			"retryOnFail": false
+		},
+		{
+			"parameters": {
+				"jsCode": "// Spends nothing unless TrendsFast holds your saved brand and the free quote fits Max Credits.\nconst context = $('Get brand context (free)').first().json.context;\nconst quote = $input.first().json;\nconst maxCredits = 10; // keep equal to Max Credits on 'Find customer conversations (10 credits)'\nif (!context || context.kind !== 'CONFIRMED_CONTEXT' || !context.context_id) {\n  throw new Error('No saved brand context yet. Set up your brand in the TrendsFast dashboard first. Nothing was spent.');\n}\nif (quote.version !== 'trends-credit-quote-v3' || quote.available !== true || !Number.isInteger(quote.credits)) {\n  throw new Error('The quote is not available right now. Nothing was spent.');\n}\nif (quote.credits > maxCredits) {\n  throw new Error(`Customers costs ${quote.credits} credits now, above this workflow's Max Credits of ${maxCredits}. Nothing was spent.`);\n}\nreturn [{ json: { context_id: context.context_id } }];\n"
+			},
+			"id": "7d3d2e0f-fb40-4ab7-8323-512d9a856fbf",
+			"name": "Check context and price",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [660, 0]
+		},
+		{
+			"parameters": {
+				"resource": "product",
+				"operation": "run",
+				"product": "customers",
+				"brandSource": "context",
+				"contextId": "={{ $json.context_id }}",
+				"maxCredits": 10,
+				"requestId": "",
+				"options": {}
+			},
+			"id": "87dafa88-1617-48eb-b202-fc260dc98b71",
+			"name": "Find customer conversations (10 credits)",
+			"type": "n8n-nodes-trendsfast.trendsFast",
+			"typeVersion": 1,
+			"position": [880, 0],
+			"retryOnFail": false
+		},
+		{
+			"parameters": {
+				"jsCode": "// Turns the Customers result into a short digest: where people talked and what they asked.\nconst result = $input.first().json;\nconst items = Array.isArray(result.data?.items) ? result.data.items : [];\nconst where = (item) => {\n  const community = item.current_observation?.conversation?.community;\n  const platform = item.entity?.platform ?? 'Unknown platform';\n  return community ? `${platform} ${community}` : platform;\n};\nconst venues = {};\nfor (const item of items) venues[where(item)] = (venues[where(item)] ?? 0) + 1;\nconst venueLines = Object.entries(venues)\n  .sort((a, b) => b[1] - a[1])\n  .map(([venue, count]) => `- ${venue}: ${count}`);\nconst conversationLines = items.slice(0, 10).map((item, index) => {\n  const observation = item.current_observation ?? {};\n  const conversation = observation.conversation ?? {};\n  return [\n    `${index + 1}. ${observation.title ?? 'Untitled conversation'}`,\n    `   Where: ${where(item)}`,\n    conversation.question?.value ? `   Asked: ${conversation.question.value}` : null,\n    conversation.problem?.value ? `   Problem: ${conversation.problem.value}` : null,\n    `   Link: ${item.entity?.original_url ?? 'no link'}`,\n    `   Seen: ${observation.observed_at ?? 'unknown'}`,\n  ].filter(Boolean).join('\\n');\n});\nconst week = String(result.generated_at ?? '').slice(0, 10);\nconst text = [\n  `Where your customers talked (week of ${week})`,\n  venueLines.length\n    ? `Venues:\\n${venueLines.join('\\n')}`\n    : 'No conversations matched this week. An empty result costs 0 credits.',\n  ...conversationLines,\n  `Result ${result.result_id}, request ${result.request_id}, ${result.usage?.this_request_credits ?? 0} credits.`,\n  ...(result.data?.limitations ?? []).map((note) => `Note: ${note}`),\n].join('\\n\\n');\nreturn [{\n  json: {\n    subject: `Where your customers talked, week of ${week}`,\n    text,\n    result_id: result.result_id,\n    request_id: result.request_id,\n  },\n}];\n"
+			},
+			"id": "12e35272-afea-4aa0-ba33-b78cd2080976",
+			"name": "Format the digest",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1100, 0]
+		},
+		{
+			"parameters": {},
+			"id": "5fe9be67-caf4-458a-b69f-af86ac894f9d",
+			"name": "Send it your way",
+			"type": "n8n-nodes-base.noOp",
+			"typeVersion": 1,
+			"position": [1320, 0]
+		}
+	],
+	"connections": {
+		"Every Monday at 08:00": {
+			"main": [
+				[
+					{
+						"node": "Get brand context (free)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get brand context (free)": {
+			"main": [
+				[
+					{
+						"node": "Get the Customers price (free)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get the Customers price (free)": {
+			"main": [
+				[
+					{
+						"node": "Check context and price",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Check context and price": {
+			"main": [
+				[
+					{
+						"node": "Find customer conversations (10 credits)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Find customer conversations (10 credits)": {
+			"main": [
+				[
+					{
+						"node": "Format the digest",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Format the digest": {
+			"main": [
+				[
+					{
+						"node": "Send it your way",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"active": false,
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {},
+	"tags": []
+}

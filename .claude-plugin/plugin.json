@@ -1,0 +1,41 @@
+{
+  "name": "trendsfast",
+  "displayName": "TrendsFast",
+  "version": "1.0.0",
+  "description": "Sourced market evidence for a brand: where its customers talk, what is trending in its niche, competitors' posts, winning video formats and AI-search answers.",
+  "author": { "name": "TrendsFast", "url": "https://trendsfast.com" },
+  "homepage": "https://trendsfast.com/agents",
+  "repository": "https://github.com/meestierolff/trendsfast-open",
+  "license": "MIT",
+  "keywords": [
+    "trends",
+    "market-research",
+    "customers",
+    "competitors",
+    "reddit",
+    "tiktok",
+    "youtube",
+    "mcp"
+  ],
+  "icon": "./assets/icon.png",
+  "documentationUrl": "https://trendsfast.com/docs",
+  "supportUrl": "https://trendsfast.com/support",
+  "privacyPolicyUrl": "https://trendsfast.com/privacy",
+  "termsOfServiceUrl": "https://trendsfast.com/terms",
+  "userConfig": {
+    "api_key": {
+      "type": "string",
+      "title": "TrendsFast API key",
+      "description": "A project key from https://trendsfast.com/setup. Claude Code keeps it in secure storage, never in settings.json.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "mcpServers": {
+    "trendsfast": {
+      "type": "http",
+      "url": "https://trendsfast.com/api/mcp/v3",
+      "headers": { "Authorization": "Bearer ${user_config.api_key}" }
+    }
+  }
+}
