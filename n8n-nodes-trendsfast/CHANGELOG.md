@@ -1,8 +1,12 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.1 (2026-10-29)
 
-First version, staged and not published.
+- Published from GitHub Actions with an npm provenance statement, which n8n requires before it verifies a community node. The node is unchanged.
+
+## 0.1.0 (2026-10-29)
+
+First version, published from a maintainer's machine and so without provenance.
 
 - TrendsFast node, usable as an AI agent tool:
   - Product: Run for a saved brand context (Customers 10, Trending 25, Competitors 30, Formats 20, Search 35 credits), or for a website and description as a 3-credit niche read through the product's lens; Get Quote (free).

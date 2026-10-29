@@ -1,20 +1,16 @@
-# Publishes n8n-nodes-trendsfast to npm with a provenance statement when a version tag is pushed.
+# Stages n8n-nodes-trendsfast on npm, with a provenance statement, when a version tag is pushed.
 #
-# Rendered from the @n8n/node-cli 0.54.4 template (`n8n-node release --init-workflow`), with the
+# Started from the @n8n/node-cli 0.54.4 template (`n8n-node release --init-workflow`), with the
 # actions pinned to the commits their v4 tags pointed to on 2026-10-28.
 #
-# This file does nothing here: GitHub only runs workflows in a repository's root
-# .github/workflows. The package is published from trendsfast-open/n8n-nodes-trendsfast, so
-# before publishing, move this file to that repository's root, run its steps with
-# working-directory n8n-nodes-trendsfast and a matching cache-dependency-path, and scope the
-# tag trigger to this package's own tags. See "Before publishing" in README.md.
-#
 # n8n requires community nodes submitted for verification to be published from GitHub Actions
-# with npm provenance (from May 1, 2026). Prerequisites: @n8n/node-cli >= 0.23.0, and either an
-# npm Trusted Publisher for this repository and `publish.yml`, or an NPM_TOKEN repository secret.
+# with npm provenance (from May 1, 2026). npm signs this job in through a Trusted Publisher for
+# meestierolff/trendsfast-open and this file, n8n-publish.yml, so no token is stored. That
+# publisher may only stage: a staged version cannot be installed until a maintainer approves it
+# on npmjs.com with 2FA.
 #
-# Release locally with `npm run release`: it lints, builds, bumps the version, updates the
-# changelog, commits, tags and pushes. The tag push runs this workflow, which publishes.
+# To release, bump the version in a pull request, merge it, then push the tag
+# n8n-nodes-trendsfast@<version> on the merge commit. See "Publishing" in the package README.
 
 name: Publish
 
@@ -25,14 +21,14 @@ on:
 
 jobs:
   publish:
-    name: Publish to npm
+    name: Stage on npm
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: n8n-nodes-trendsfast
 
     permissions:
-      # Mints the OIDC token for the npm provenance attestation.
+      # Mints the OIDC token that npm exchanges for publish rights and signs provenance with.
       id-token: write
       contents: read
 
@@ -42,18 +38,33 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
+          # `npm stage` needs npm 11.15.0 or later; Node 26.13.0, the LTS on 2026-10-29, ships 11.20.0.
           node-version: "lts/*"
           cache: "npm"
           cache-dependency-path: n8n-nodes-trendsfast/package-lock.json
 
+      - name: Check the tag names this version
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if [ "$GITHUB_REF_NAME" != "n8n-nodes-trendsfast@$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not name package.json version $version"
+            exit 1
+          fi
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Release
-        # Lint and build run as part of the release. With Trusted Publishing leave NPM_TOKEN
-        # unset; with a token, it is written to .npmrc for this step only.
-        run: |
-          [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
-          npm run release
+      # The template runs `npm run release`, which in GitHub Actions lints, builds and calls
+      # `npm publish`. The Trusted Publisher allows only staging, so these are the same steps
+      # ending in `npm stage publish`. RELEASE_MODE passes prepublishOnly's guard.
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Stage
+        run: npm stage publish
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_MODE: "true"
+          NPM_CONFIG_PROVENANCE: "true"

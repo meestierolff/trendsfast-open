@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-trendsfast",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "TrendsFast for n8n: where your customers talk, what is trending in your niche, what competitors post, which video formats work and what people search for, with sources and credit-safe request IDs.",
 	"license": "MIT",
 	"homepage": "https://trendsfast.com/docs",

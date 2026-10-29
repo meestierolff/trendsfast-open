@@ -6,15 +6,13 @@ TrendsFast is a trends API for agents and applications. For a brand it finds whe
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
-> **Status: staged, not published.** Version 0.1.0 lives in the private TrendsFast monorepo. It is not on npm and has not been submitted to n8n. See [Publishing](#publishing-maintainers).
+> **Status: on npm, not yet verified by n8n.** Self-hosted n8n installs it as a community node. The nodes panel and n8n Cloud offer it only once n8n verifies it. See [Publishing](#publishing-maintainers).
 
 [Installation](#installation) · [Credentials](#credentials) · [Operations and costs](#operations-and-costs) · [The request ID rule](#the-request-id-rule) · [AI agents](#use-it-as-an-ai-agent-tool) · [Output](#output) · [Examples](#example-workflows) · [Compatibility](#compatibility) · [Development](#development) · [Publishing](#publishing-maintainers) · [Standards](#standards-this-package-follows) · [Resources](#resources)
 
 ## Installation
 
-These steps work once the package is on npm.
-
-**From the n8n UI (self-hosted; owners and admins).** Go to **Settings > Community Nodes > Install**, enter `n8n-nodes-trendsfast` (optionally with a version such as `@0.1.0`), confirm that you understand the risks of installing unverified code, and select **Install**. ([n8n: GUI installation](https://docs.n8n.io/integrations/community-nodes/installation/gui-install/))
+**From the n8n UI (self-hosted; owners and admins).** Go to **Settings > Community Nodes > Install**, enter `n8n-nodes-trendsfast` (optionally with a version such as `@0.1.1`), confirm that you understand the risks of installing unverified code, and select **Install**. ([n8n: GUI installation](https://docs.n8n.io/integrations/community-nodes/installation/gui-install/))
 
 **Manually (queue mode or private registries).** In the n8n container:
 
@@ -177,36 +175,29 @@ The tests run on Node's built-in runner against the built `dist/` and never open
 
 ## Publishing (maintainers)
 
-**Documentation only. None of these steps has been taken.** Each one is a separate decision for the TrendsFast founder.
+The package is published from `github.com/meestierolff/trendsfast-open`, in its `n8n-nodes-trendsfast/` directory (`repository` and `repository.directory` in `package.json`). Keep `author.email` a TrendsFast address: n8n's `@n8n/community-nodes/valid-author` rule, which both `n8n-node lint` and the scanner apply, requires one. It is `mees@trendsfast.com`.
 
-The package is published from `github.com/meestierolff/trendsfast-open`, in its `n8n-nodes-trendsfast/` directory (`repository` and `repository.directory` in `package.json`).
+0.1.0 was published on 2026-10-29 from a maintainer's machine, so it has no provenance. Every later version goes through `.github/workflows/n8n-publish.yml` at the repository root.
 
-### Before publishing
+### How npm publishing is set up
 
-- **Keep `author.email` a TrendsFast address.** n8n's `@n8n/community-nodes/valid-author` rule, which both `n8n-node lint` and the scanner apply, requires one. It is `mees@trendsfast.com`.
-- **Move the workflows to the publishing repository's root.** GitHub runs workflows only from a repository's root `.github/workflows`, so `.github/workflows/publish.yml` and `ci.yml` are inert in this directory. Move both to the root of `trendsfast-open`, then:
-  - run their steps with `working-directory: n8n-nodes-trendsfast` (for example `defaults.run.working-directory`);
-  - set a matching `cache-dependency-path: n8n-nodes-trendsfast/package-lock.json` on `actions/setup-node`;
-  - scope the publish trigger to this package's own tags, for example `n8n-nodes-trendsfast@*.*.*`, with release-it's `git.tagName` set to `n8n-nodes-trendsfast@${version}` in a `.release-it.json` next to `package.json`. `npm run release` runs release-it in this directory and passes no tag format of its own.
+- **Trusted Publisher.** The package's settings on npmjs.com list a GitHub Actions Trusted Publisher for `meestierolff/trendsfast-open` and the workflow file `n8n-publish.yml`, with no environment. The workflow signs in through it with OIDC, so no npm token is stored anywhere.
+- **Staging only.** That publisher may run `npm stage publish` but not `npm publish`. A staged version cannot be installed until a maintainer approves it with 2FA, so a pushed tag alone releases nothing.
 
-  Run from this directory, `n8n-node release` then notes that it found no publish workflow; that note is harmless.
+### Releasing a version
 
-### Steps
+1. **Bump** `version` in `package.json` and `package-lock.json` and add the entry to `CHANGELOG.md`, in a pull request. Run `npm ci && npm run check` in `n8n-nodes-trendsfast/` first.
+2. **Tag** the merge commit on `main` as `n8n-nodes-trendsfast@<version>` and push the tag. The workflow checks that the tag names the version in `package.json`, lints, builds and stages the version with provenance.
+3. **Approve** it in the package's **Staged Packages** tab on npmjs.com, or with `npm stage approve <stage-id>`. Both ask for 2FA.
+4. **Verify:** `npm view n8n-nodes-trendsfast` lists the version, and `npx @n8n/scan-community-package n8n-nodes-trendsfast` passes. It checks provenance, fetches the attested GitHub source, finds this package in it by name and lints it and the tarball.
 
-1. **Decide.** Approve publication and confirm the MIT license for this package. n8n requires MIT; the surrounding TrendsFast repository is AGPL-3.0, and its public-export rules ask for a license review, a secret scan and founder approval. Choose the npm account, and make `trendsfast-open` public: n8n verifies only packages from a public repository whose URL and author match the npm package, and the scanner fetches the attested source from GitHub.
-2. **Copy only this directory** into `trendsfast-open/n8n-nodes-trendsfast/`, without `node_modules`, `dist` or `.scan`, and do [Before publishing](#before-publishing) there:
+Never run `npm publish` locally: `prepublishOnly` refuses it, and n8n does not accept nodes published from a local machine. `npm run release` also tags and pushes, but it runs `auto-changelog`, which overwrites this hand-written `CHANGELOG.md`.
 
-   ```sh
-   rsync -a --exclude node_modules --exclude dist --exclude .scan ./ ../trendsfast-open/n8n-nodes-trendsfast/
-   ```
+### After the first version with provenance
 
-3. **Check it there:** `npm ci && npm run check` in `n8n-nodes-trendsfast/`.
-4. **Set up npm publishing** for the package: on npmjs.com, under **Publish access > Trusted Publishers**, add a GitHub Actions publisher with the repository owner `meestierolff`, the repository `trendsfast-open` and the workflow file `publish.yml`. If npm will not add one for a package that has never been published, use a granular access token stored as the `NPM_TOKEN` Actions secret for the first release, then switch to Trusted Publishing and delete the token.
-5. **Release:** on `main` of `trendsfast-open`, with a clean tree and an upstream, run `npm run release` in `n8n-nodes-trendsfast/`. It lints, builds, bumps the version, updates `CHANGELOG.md`, commits, tags and pushes; the tag push runs `publish.yml`, which publishes to npm with provenance. Never run `npm publish` locally: `prepublishOnly` refuses it, and n8n does not accept nodes published from a local machine.
-6. **Verify:** `npm view n8n-nodes-trendsfast` lists the version with provenance, and `npx @n8n/scan-community-package n8n-nodes-trendsfast` passes. It checks provenance, fetches the attested GitHub source, finds this package in it by name and lints it and the tarball.
-7. **Test in n8n** with a real key: install it, test the credential (free), run **Get Context**, **Get Wallet** and **Get Quote** (free), then one **Customers** run for the saved brand context with Max Credits 10. That last call spends up to 10 real credits and needs its own approval.
-8. **Submit** at the [n8n Creator Portal](https://creators.n8n.io/nodes). n8n fetches the package from npm to vet it, and may reject nodes that compete with its paid features.
-9. **After publication,** record the n8n node as a delivery channel in TrendsFast's product flow, using paths outside the deploy-excluded `integrations/`.
+1. **Test in n8n** with a real key: install it, test the credential (free), run **Get Context**, **Get Wallet** and **Get Quote** (free), then one **Customers** run for the saved brand context with Max Credits 10. That last call spends up to 10 real credits and needs its own approval.
+2. **Submit** at the [n8n Creator Portal](https://creators.n8n.io/nodes). n8n fetches the package from npm to vet it, and may reject nodes that compete with its paid features.
+3. **Record** the n8n node as a delivery channel in TrendsFast's product flow, using paths outside the deploy-excluded `integrations/`.
 
 ## Standards this package follows
 
@@ -217,11 +208,11 @@ Checked on 2026-10-28 against n8n's documentation, the `@n8n/node-cli` 0.54.4 pa
 | Scaffold and commands: `npm create @n8n/node`, `n8n-node build`, `dev`, `lint`, `lint --fix`, `release` | Same layout (`nodes/`, `credentials/`, `icons/`, `dist/`), `tsconfig.json`, scripts and `prepublishOnly: n8n-node prerelease` as the 0.54.4 template | [n8n-node CLI](https://docs.n8n.io/integrations/creating-nodes/build/n8n-node/), [n8n-nodes-starter](https://github.com/n8n-io/n8n-nodes-starter) |
 | Name `n8n-nodes-…`, keyword `n8n-community-node-package`, nodes and credentials listed under `n8n` in `package.json` | Yes, with `n8nNodesApiVersion: 1` | [Submit community nodes](https://docs.n8n.io/integrations/creating-nodes/deploy/submit-community-nodes/) |
 | No runtime dependencies | `dependencies` is absent; `n8n-workflow` is a `*` peer dependency; everything else is a pinned dev dependency | [Verification guidelines](https://docs.n8n.io/integrations/creating-nodes/build/reference/verification-guidelines/) |
-| MIT license | `license: MIT` and `LICENSE.md`, copyright TrendsFast (pending the founder's license review, step 1 above) | Verification guidelines |
-| Public repository; npm repository URL and author match it | `repository` points at `trendsfast-open` with `directory: n8n-nodes-trendsfast`; that repository must be public (step 1); `author` is TrendsFast with `mees@trendsfast.com` | Verification guidelines |
+| MIT license | `license: MIT` and `LICENSE.md`, copyright TrendsFast (pending the founder's license review) | Verification guidelines |
+| Public repository; npm repository URL and author match it | `repository` points at the public `trendsfast-open` with `directory: n8n-nodes-trendsfast`; `author` is TrendsFast with `mees@trendsfast.com` | Verification guidelines |
 | Lint passes, strict mode | `n8n-node lint` runs with the unmodified default `eslint.config.mjs` and `"strict": true`, with no errors or warnings | Verification guidelines, [node-cli](https://www.npmjs.com/package/@n8n/node-cli) |
 | `npx @n8n/scan-community-package n8n-nodes-PACKAGE` passes | Its static analysis passes locally on the source and the packed tarball (`npm run scan:local`); its provenance and source-fetch checks need the published package | Verification guidelines, [scanner](https://www.npmjs.com/package/@n8n/scan-community-package) |
-| Published from GitHub Actions with npm provenance (from May 1, 2026) | `.github/workflows/publish.yml` from the 0.54.4 template, actions pinned to commits, to move to the publishing repository's root ([Before publishing](#before-publishing)) | Submit community nodes |
+| Published from GitHub Actions with npm provenance (from May 1, 2026) | `.github/workflows/n8n-publish.yml` at the root of `trendsfast-open`, from the 0.54.4 template with actions pinned to commits, stages each version for a maintainer's 2FA approval ([Releasing a version](#releasing-a-version)); 0.1.0 has no provenance | Submit community nodes |
 | No environment variables or file system access | The node reads only its parameters and n8n's helpers; the lint bans `process` and file imports | Verification guidelines |
 | English UI, documentation, credential test, password field for the key | Yes; `test` reads the free wallet | Verification guidelines, [UX guidelines](https://docs.n8n.io/integrations/creating-nodes/build/reference/ux-guidelines/) |
 | Declarative style where possible | Programmatic on purpose, for the request ID rule (see [Development](#development)) | [Choose a node style](https://docs.n8n.io/integrations/creating-nodes/plan/choose-node-method/) |
@@ -230,8 +221,8 @@ Checked on 2026-10-28 against n8n's documentation, the `@n8n/node-cli` 0.54.4 pa
 
 - No call to the live TrendsFast API was made: a Run spends real credits. Every request was checked against the OpenAPI document instead.
 - The node has not run inside a real n8n instance (`npm run dev` was not run); only n8n's loader and tool conversion were run on it (see [Compatibility](#compatibility)). The example workflows have not been imported into n8n. Their core nodes' type versions (Schedule Trigger 1.2, Set 3.4, Code 2, Wait 1.1, No Operation 1, Sticky Note 1) and parameter names were checked against the node descriptions in n8n-nodes-base 2.45.4, but the files were written by hand, not exported from n8n.
-- The moved workflows (working directory, cache path, scoped tag trigger and release-it tag format) have not run anywhere.
-- The scanner's provenance and source checks, and n8n's own review, can only happen after publication.
+- `n8n-publish.yml` first runs for 0.1.1. npm does not document whether a staged version keeps its provenance statement once approved; step 4 of [Releasing a version](#releasing-a-version) checks it on 0.1.1.
+- The scanner's provenance and source checks need a version with provenance, and n8n has not reviewed the node.
 
 ## Resources
 
@@ -241,4 +232,5 @@ Checked on 2026-10-28 against n8n's documentation, the `@n8n/node-cli` 0.54.4 pa
 
 ## Version history
 
-- **0.1.0** (unreleased): first version. See [CHANGELOG.md](CHANGELOG.md).
+- **0.1.1** (2026-10-29): published from GitHub Actions; the node is unchanged. See [CHANGELOG.md](CHANGELOG.md).
+- **0.1.0** (2026-10-29): first version, published without provenance.
