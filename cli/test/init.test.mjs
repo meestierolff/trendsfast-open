@@ -42,6 +42,10 @@ describe("trendsfast init", () => {
     assert.match(result.stdout, /codex/);
     assert.match(result.stdout, /claude mcp add --transport http trendsfast/);
     assert.match(result.stdout, /codex mcp add trendsfast/);
+    // The MCP lines read TRENDSFAST_API_KEY, which init never shows: they say where a key comes from.
+    assert.match(result.stdout, /An MCP client needs a key of its own/);
+    assert.match(result.stdout, /create one at https:\/\/trendsfast\.com\/dashboard\/api-keys/);
+    assert.doesNotMatch(result.stdout, /each line reads the key from TRENDSFAST_API_KEY/);
   });
 
   it("records each skill in ~/.agents/.skill-lock.json the way npx skills does, keeping other entries", async () => {

@@ -1,6 +1,6 @@
 {
   "name": "trendsfast-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The trendsfast command for AI coding agents: installs the TrendsFast skill, signs in through the browser and runs source-backed market research (customers, trending, competitors, formats, search) with quoted, idempotent paid calls.",
   "license": "MIT",
   "type": "module",
