@@ -17,3 +17,11 @@ keeps npm publication disabled pending separate qualified license review plus
 the registry-identity and authentication gates. An immutable GitHub-SHA npx
 release may proceed after the repository, dependency, secret and package
 acceptance gates pass.
+
+## The CLI and SDKs (2026-10-31)
+
+The `trendsfast-cli` command and the `trendsfast` SDKs for Node and Python are newly authored,
+first-party MIT code. None of them has a runtime dependency (see `DEPENDENCY_LICENSES.md`), so
+none ships third-party code. They are published the way the n8n node is: the founder approves
+each version with two-factor authentication from their own registry account. This record adds no
+qualified legal conclusion. The gate recorded above for the original package is unchanged.

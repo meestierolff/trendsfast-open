@@ -1,0 +1,546 @@
+{
+  "version": "trends-api-v3",
+  "result_id": "6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
+  "request_id": "2b9e6c1d-4f3a-4e5b-8c7d-9a0b1c2d3e4f",
+  "operation": "niche",
+  "generated_at": "2026-10-15T12:00:00Z",
+  "read_at": "2026-10-15T12:00:00Z",
+  "new_research": true,
+  "data": {
+    "version": "trend-intelligence-v3",
+    "snapshot_id": "snapshot_agent_kit",
+    "as_of": "2026-10-15T12:00:00Z",
+    "read_at": "2026-10-15T12:00:00Z",
+    "classification_as_of": "2026-10-15T12:00:00Z",
+    "classification_window": {
+      "lookback_hours": 72,
+      "observed_from": "2026-10-12T12:00:00Z",
+      "observed_to": "2026-10-15T12:00:00Z"
+    },
+    "context": {
+      "kind": "CONFIRMED_CONTEXT",
+      "context_id": "44444444-4444-4444-8444-444444444444",
+      "revision": 3,
+      "fields": [
+        {
+          "field": "description",
+          "value": "Invoicing for freelance designers",
+          "basis": "OWNER_CONFIRMED",
+          "evidence_ids": []
+        },
+        {
+          "field": "community",
+          "value": "r/fixture_freelance",
+          "basis": "OWNER_CONFIRMED",
+          "evidence_ids": []
+        }
+      ]
+    },
+    "items": [
+      {
+        "id": "item_late_invoice",
+        "cluster_id": "cluster_late_invoice",
+        "entity": {
+          "id": "entity_late_invoice",
+          "platform": "REDDIT",
+          "native_id": "fixture-late_invoice",
+          "original_url": "https://example.invalid/reddit/late_invoice",
+          "creator": {
+            "native_id": "creator-late_invoice",
+            "name": "fixture_user",
+            "url": null
+          }
+        },
+        "content_type": "CONVERSATION",
+        "current_observation": {
+          "version": "trend-index-observation-v3",
+          "id": "observation_late_invoice",
+          "entity": {
+            "id": "entity_late_invoice",
+            "platform": "REDDIT",
+            "native_id": "fixture-late_invoice",
+            "original_url": "https://example.invalid/reddit/late_invoice",
+            "creator": {
+              "native_id": "creator-late_invoice",
+              "name": "fixture_user",
+              "url": null
+            }
+          },
+          "collection_id": "11111111-1111-4111-8111-111111111111",
+          "rights_receipt_id": "44444444-4444-4444-8444-444444444444",
+          "source": "Synthetic reddit source",
+          "origin": "FIXTURE",
+          "content_type": "CONVERSATION",
+          "title": "Fixture: how do you chase a late invoice without losing the client?",
+          "excerpt": "Synthetic fixture text, not a real post.",
+          "published_at": "2026-10-14T09:00:00Z",
+          "observed_at": "2026-10-15T11:00:00Z",
+          "expires_at": "2026-10-16T12:00:00Z",
+          "language": "en",
+          "country": "US",
+          "region": null,
+          "observed_market": null,
+          "categories": [
+            "FINANCE"
+          ],
+          "metrics": [
+            {
+              "name": "score",
+              "value": 143,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed score",
+              "scope": "This post",
+              "observed_at": "2026-10-15T11:00:00Z",
+              "period_start": null,
+              "period_end": null
+            },
+            {
+              "name": "comments",
+              "value": 57,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed comments",
+              "scope": "This post",
+              "observed_at": "2026-10-15T11:00:00Z",
+              "period_start": null,
+              "period_end": null
+            }
+          ],
+          "video": null,
+          "conversation": {
+            "community": "r/fixture_freelance",
+            "root_native_id": null,
+            "parent_native_id": null,
+            "thread_context": [],
+            "question": {
+              "value": "How do you chase a late invoice politely?",
+              "basis": "PERMITTED_TEXT",
+              "evidence_ids": [
+                "observation_late_invoice"
+              ]
+            },
+            "problem": {
+              "value": "Clients pay invoices 60 days late",
+              "basis": "PERMITTED_TEXT",
+              "evidence_ids": [
+                "observation_late_invoice"
+              ]
+            },
+            "access": "PUBLIC_OBSERVED",
+            "rules": null,
+            "destination_state": "UNKNOWN",
+            "posting_permission": "NOT_GRANTED"
+          },
+          "search": null,
+          "evidence_quality": "PERMITTED_TEXT",
+          "limitations": [
+            "Synthetic fixture, not a real source observation."
+          ]
+        },
+        "observation_ids": [
+          "observation_late_invoice"
+        ],
+        "signal": "RECURRING_PROBLEM",
+        "signal_basis": "Synthetic fixture; one snapshot.",
+        "measured_growth": "NOT_COMPARABLE",
+        "growth": [],
+        "virality": "NOT_ESTABLISHED",
+        "ring": "CORE",
+        "relevance": {
+          "basis": "CONTROLLED_DOMAIN_FAMILIES_AND_TOKEN_MATCH",
+          "score": 0.91,
+          "matched_fields": [],
+          "matched_categories": [],
+          "product_fit": "REVIEW_REQUIRED",
+          "explanation": "Matches the confirmed problem: late payments."
+        },
+        "freshness": "CURRENT_DATED_REFERENCE",
+        "limitations": [
+          "Synthetic fixture; not representative of real coverage."
+        ],
+        "guidance": {
+          "evidence_class": "AUDIENCE_EVIDENCE",
+          "uses": [
+            {
+              "use": "CUSTOMER_PROBLEM",
+              "channels": [],
+              "note": "Use as customer_problem."
+            },
+            {
+              "use": "POST_TOPIC",
+              "channels": [],
+              "note": "Use as post_topic."
+            }
+          ],
+          "caution": "One thread; it does not show how common the problem is."
+        }
+      },
+      {
+        "id": "item_invoice_template",
+        "cluster_id": "cluster_invoice_template",
+        "entity": {
+          "id": "entity_invoice_template",
+          "platform": "X",
+          "native_id": "fixture-invoice_template",
+          "original_url": "https://example.invalid/x/invoice_template",
+          "creator": {
+            "native_id": "creator-invoice_template",
+            "name": "fixture_designer",
+            "url": null
+          }
+        },
+        "content_type": "CONVERSATION",
+        "current_observation": {
+          "version": "trend-index-observation-v3",
+          "id": "observation_invoice_template",
+          "entity": {
+            "id": "entity_invoice_template",
+            "platform": "X",
+            "native_id": "fixture-invoice_template",
+            "original_url": "https://example.invalid/x/invoice_template",
+            "creator": {
+              "native_id": "creator-invoice_template",
+              "name": "fixture_designer",
+              "url": null
+            }
+          },
+          "collection_id": "11111111-1111-4111-8111-111111111111",
+          "rights_receipt_id": "44444444-4444-4444-8444-444444444444",
+          "source": "Synthetic x source",
+          "origin": "FIXTURE",
+          "content_type": "CONVERSATION",
+          "title": "Fixture: is there an invoice template that adds VAT for EU clients?",
+          "excerpt": null,
+          "published_at": "2026-10-14T09:00:00Z",
+          "observed_at": "2026-10-15T11:00:00Z",
+          "expires_at": "2026-10-16T12:00:00Z",
+          "language": "en",
+          "country": "US",
+          "region": null,
+          "observed_market": null,
+          "categories": [
+            "FINANCE"
+          ],
+          "metrics": [
+            {
+              "name": "likes",
+              "value": 88,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed likes",
+              "scope": "This post",
+              "observed_at": "2026-10-15T11:00:00Z",
+              "period_start": null,
+              "period_end": null
+            },
+            {
+              "name": "reposts",
+              "value": 12,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed reposts",
+              "scope": "This post",
+              "observed_at": "2026-10-15T11:00:00Z",
+              "period_start": null,
+              "period_end": null
+            },
+            {
+              "name": "views",
+              "value": null,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed views",
+              "scope": "This post",
+              "observed_at": "2026-10-15T11:00:00Z",
+              "period_start": null,
+              "period_end": null
+            }
+          ],
+          "video": null,
+          "conversation": {
+            "community": null,
+            "root_native_id": null,
+            "parent_native_id": null,
+            "thread_context": [],
+            "question": {
+              "value": "Which invoice template handles EU VAT?",
+              "basis": "PERMITTED_TEXT",
+              "evidence_ids": [
+                "observation_invoice_template"
+              ]
+            },
+            "problem": {
+              "value": null,
+              "basis": "PERMITTED_TEXT",
+              "evidence_ids": []
+            },
+            "access": "PUBLIC_OBSERVED",
+            "rules": null,
+            "destination_state": "UNKNOWN",
+            "posting_permission": "NOT_GRANTED"
+          },
+          "search": null,
+          "evidence_quality": "PERMITTED_TEXT",
+          "limitations": [
+            "Synthetic fixture, not a real source observation."
+          ]
+        },
+        "observation_ids": [
+          "observation_invoice_template"
+        ],
+        "signal": "RECURRING_PROBLEM",
+        "signal_basis": "Synthetic fixture; one snapshot.",
+        "measured_growth": "NOT_COMPARABLE",
+        "growth": [],
+        "virality": "NOT_ESTABLISHED",
+        "ring": "ADJACENT",
+        "relevance": {
+          "basis": "CONTROLLED_DOMAIN_FAMILIES_AND_TOKEN_MATCH",
+          "score": 0.64,
+          "matched_fields": [],
+          "matched_categories": [],
+          "product_fit": "REVIEW_REQUIRED",
+          "explanation": "Shares the invoicing topic."
+        },
+        "freshness": "CURRENT_DATED_REFERENCE",
+        "limitations": [
+          "Synthetic fixture; not representative of real coverage."
+        ],
+        "guidance": {
+          "evidence_class": "AUDIENCE_EVIDENCE",
+          "uses": [
+            {
+              "use": "FEATURE_INPUT",
+              "channels": [],
+              "note": "Use as feature_input."
+            }
+          ],
+          "caution": "A request, not demand."
+        }
+      }
+    ],
+    "coverage": [
+      {
+        "source": "Synthetic reddit source",
+        "platform": "REDDIT",
+        "status": "OBSERVATIONS_AVAILABLE",
+        "last_observed_at": "2026-10-15T11:00:00Z",
+        "observation_count": 1,
+        "limitations": [
+          "Synthetic coverage entry."
+        ]
+      },
+      {
+        "source": "Synthetic x source",
+        "platform": "X",
+        "status": "OBSERVATIONS_AVAILABLE",
+        "last_observed_at": "2026-10-15T11:00:00Z",
+        "observation_count": 1,
+        "limitations": [
+          "Synthetic coverage entry."
+        ]
+      },
+      {
+        "source": "Synthetic github source",
+        "platform": "GITHUB",
+        "status": "COLLECTED_EMPTY",
+        "last_observed_at": null,
+        "observation_count": 0,
+        "limitations": [
+          "Synthetic coverage entry."
+        ]
+      }
+    ],
+    "excluded_count": 0,
+    "truncated": false,
+    "new_research": true,
+    "limitations": [
+      "Synthetic fixture only."
+    ],
+    "brief": {
+      "version": "trend-brief-v3",
+      "headline": "Two conversations about late payments and VAT.",
+      "sections": [
+        {
+          "key": "AUDIENCE_CONVERSATIONS",
+          "status": "AVAILABLE",
+          "count": 2,
+          "item_ids": [
+            "item_late_invoice",
+            "item_invoice_template"
+          ],
+          "note": "Synthetic section note."
+        },
+        {
+          "key": "SEARCH_DEMAND",
+          "status": "NOT_COLLECTED",
+          "count": 0,
+          "item_ids": [],
+          "note": "Search was not collected."
+        }
+      ],
+      "sources": [
+        {
+          "source": "Synthetic reddit source",
+          "platform": "REDDIT",
+          "items": 2,
+          "markets": [
+            "US"
+          ]
+        }
+      ],
+      "coverage_gaps": [
+        {
+          "platform": "TIKTOK",
+          "note": "TikTok was not collected in this call."
+        }
+      ],
+      "next_steps": [
+        "Read each community's rules before drafting a post."
+      ]
+    },
+    "communities": [
+      {
+        "version": "community-profile-v3",
+        "platform": "REDDIT",
+        "community": "fixture_freelance",
+        "url": "https://www.reddit.com/r/fixture_freelance/",
+        "status": "PROFILED",
+        "observed_at": "2026-10-15T12:00:00Z",
+        "rules_observed_at": null,
+        "weekly_active_users": 12000,
+        "weekly_contributions": 900,
+        "description": "Synthetic community for fixtures.",
+        "rules": [
+          {
+            "number": 1,
+            "title": "No self-promotion outside the weekly thread",
+            "text": "Synthetic rule.",
+            "source": "RULES"
+          },
+          {
+            "number": 2,
+            "title": "Links need context",
+            "text": "Synthetic rule.",
+            "source": "RULES"
+          }
+        ],
+        "posting": {
+          "self_promotion": {
+            "policy": "RESTRICTED",
+            "rules": [
+              1
+            ]
+          },
+          "links": {
+            "policy": "RESTRICTED",
+            "rules": [
+              2
+            ]
+          },
+          "ai_content": {
+            "policy": "UNKNOWN",
+            "rules": []
+          },
+          "flair_required": {
+            "required": false,
+            "rules": []
+          },
+          "account_requirements": {
+            "stated": false,
+            "rules": []
+          },
+          "promotion_venue": "the weekly self-promotion thread"
+        },
+        "culture": {
+          "sampled_posts": 50,
+          "text_post_share": 0.8,
+          "formats": [
+            {
+              "format": "STORY",
+              "share": 0.3
+            },
+            {
+              "format": "QUESTION",
+              "share": 0.5
+            },
+            {
+              "format": "GUIDE",
+              "share": 0.1
+            },
+            {
+              "format": "LINK",
+              "share": 0.1
+            }
+          ],
+          "median_score": 40,
+          "median_comments": 22,
+          "top_flairs": [],
+          "moderator_posts": 1,
+          "examples": []
+        },
+        "all_time_top": {
+          "posts": [
+            {
+              "title": "Fixture: how I got a client to pay a 90-day invoice",
+              "url": "https://www.reddit.com/r/fixture_freelance/comments/top1/",
+              "kind": "TEXT",
+              "format": "STORY",
+              "score": 900,
+              "comments": 120,
+              "posted_at": null,
+              "words": 300,
+              "structure": "PROSE",
+              "links_out": false
+            }
+          ],
+          "pattern": [
+            "The top post is a first-person story."
+          ]
+        },
+        "community_posts": [
+          {
+            "title": "Weekly self-promotion thread",
+            "url": "https://www.reddit.com/r/fixture_freelance/comments/weekly/",
+            "text": "Synthetic pinned post.",
+            "pinned": true,
+            "posted_at": null
+          }
+        ],
+        "format_analysis": {
+          "version": "community-format-v1",
+          "model": "claude-sonnet-5-5",
+          "analyzed_at": "2026-10-15T12:00:00Z",
+          "based_on": [
+            "https://www.reddit.com/r/fixture_freelance/comments/top1/"
+          ],
+          "summary": "First-person stories about a client problem, with the numbers.",
+          "hook": "Titles open with the outcome.",
+          "structure": "Short paragraphs.",
+          "length": "200 to 400 words.",
+          "proof": null,
+          "product_mention": "Only when asked.",
+          "avoid": [
+            "Posting a link without context."
+          ],
+          "cost_usd": 0.01
+        },
+        "play": [
+          "Answer late-payment questions with your own process; link nothing unless asked."
+        ],
+        "limitations": [
+          "Synthetic profile."
+        ]
+      }
+    ]
+  },
+  "usage": {
+    "credits_charged": 10,
+    "read_charge": 0,
+    "this_request_credits": 10,
+    "catalog_version": "fixture",
+    "replayed": false
+  },
+  "next_cursor": null
+}

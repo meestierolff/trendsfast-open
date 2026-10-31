@@ -1,8 +1,8 @@
 {
   "name": "trendsfast",
   "displayName": "TrendsFast",
-  "version": "1.0.0",
-  "description": "Sourced market evidence for a brand: where its customers talk, what is trending in its niche, competitors' posts, winning video formats and AI-search answers.",
+  "version": "1.2.0",
+  "description": "Sourced market evidence for a brand: where its customers talk, what is trending in its niche, competitors' posts, winning video formats and AI-search answers. One skill, loaded only when a task needs it, with a reference per product and workflow, and the remote MCP server.",
   "author": { "name": "TrendsFast", "url": "https://trendsfast.com" },
   "homepage": "https://trendsfast.com/agents",
   "repository": "https://github.com/meestierolff/trendsfast-open",

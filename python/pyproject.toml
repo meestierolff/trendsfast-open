@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trendsfast"
+version = "0.1.0"
+description = "TrendsFast SDK for Python: source-backed market evidence for AI agents (customers, trending, competitors, formats, search), with idempotent paid calls and free recovery."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "TrendsFast" }]
+keywords = ["trendsfast", "trends", "market-research", "ai-agents", "reddit", "tiktok", "seo"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://trendsfast.com"
+Documentation = "https://trendsfast.com/docs"
+Source = "https://github.com/meestierolff/trendsfast-open"
+
+[tool.setuptools]
+packages = ["trendsfast"]
+
+[tool.setuptools.package-data]
+trendsfast = ["catalog.json", "py.typed"]

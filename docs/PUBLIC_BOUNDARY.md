@@ -4,6 +4,7 @@ Classification: `PUBLIC_PROTOCOL_AND_CLIENT_TOOLING_ONLY`.
 
 This repository holds the public TrendsFast agent kit. Its parts:
 
+- the `trendsfast` CLI (`cli/`) and the `trendsfast` SDKs for Node (`sdk-js/`) and Python (`python/`);
 - the `trendsfast` agent skill;
 - a Claude Code plugin that connects the remote MCP server;
 - `n8n-nodes-trendsfast`, an n8n community node for the V3 REST API.
@@ -15,7 +16,7 @@ The remote service remains the only application, entitlement, idempotency, cost-
 - The public endpoints: `https://trendsfast.com/api/mcp/v3` and `https://trendsfast.com/v3/...`.
 - Public tool names, operations, prices and safe error codes.
 - The published V3 OpenAPI document (`https://trendsfast.com/v3/openapi.json`), used as a test fixture.
-- The agent skill, the plugin and marketplace manifests, and the n8n node, credential and example workflows.
+- The CLI and SDK clients of the public API, the agent skill, the plugin and marketplace manifests, and the n8n node, credential and example workflows.
 - Synthetic fixtures, tests and public documentation.
 
 ## Excluded material
