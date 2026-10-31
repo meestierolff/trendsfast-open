@@ -1,0 +1,8 @@
+dist
+node_modules
+*.tsbuildinfo
+*.tgz
+# Copied from ../sdk-js/src and ../skills by scripts/prepare-build.mjs. Anchored to this
+# folder: an unanchored `skills/` also matched src/skills/, the installer's own source.
+/src/sdk/
+/skills/

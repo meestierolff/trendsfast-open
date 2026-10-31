@@ -1,0 +1,331 @@
+{
+  "$comment": "What TrendsFast sells, where each call lives and what it costs (contract trends-api-v3). The private product repository checks every value against the server; the free quote is the authority at run time.",
+  "default_base_url": "https://trendsfast.com",
+  "max_credits_ceiling": 1000,
+  "paid_timeout_seconds": 150,
+  "read_timeout_seconds": 30,
+  "operations": [
+    "global",
+    "niche",
+    "ask",
+    "discover"
+  ],
+  "products": [
+    {
+      "id": "customers",
+      "name": "Customers",
+      "command": "customers",
+      "credits": 10,
+      "question": "What are my customers stuck on?",
+      "reads": "Reddit, X, Hacker News and GitHub"
+    },
+    {
+      "id": "niche",
+      "name": "Trending",
+      "command": "trending",
+      "credits": 25,
+      "question": "What's trending in my niche, and next door?",
+      "reads": "TikTok, YouTube, Instagram, Facebook, X, Reddit, Hacker News and Google Trends"
+    },
+    {
+      "id": "competitors",
+      "name": "Competitors",
+      "command": "competitors",
+      "credits": 30,
+      "question": "What are my competitors doing?",
+      "reads": "X, TikTok, Instagram and YouTube"
+    },
+    {
+      "id": "formats",
+      "name": "Formats",
+      "command": "formats",
+      "credits": 20,
+      "question": "What videos work in my niche?",
+      "reads": "TikTok, YouTube, Instagram and Facebook"
+    },
+    {
+      "id": "search",
+      "name": "Search",
+      "command": "search",
+      "credits": 35,
+      "question": "What do people search for, and what do AI assistants answer?",
+      "reads": "Google Trends, ChatGPT, Claude, Gemini and Perplexity"
+    }
+  ],
+  "read_credits": {
+    "global": 1,
+    "niche": 3,
+    "ask": 5,
+    "discover": 5
+  },
+  "paths": {
+    "global": "/v3/trends/global",
+    "niche": "/v3/trends/niche",
+    "ask": "/v3/trends/ask",
+    "discover": "/v3/trends/discover",
+    "result": "/v3/trends/results/{id}",
+    "request": "/v3/trends/requests/{id}",
+    "wallet": "/v3/trends/wallet",
+    "history": "/v3/trends/history",
+    "quote": "/v3/trends/quote",
+    "context": "/v3/trends/context"
+  },
+  "platforms": [
+    "TIKTOK",
+    "YOUTUBE",
+    "INSTAGRAM",
+    "FACEBOOK",
+    "X",
+    "REDDIT",
+    "GOOGLE",
+    "BING",
+    "AI_SEARCH",
+    "WEB",
+    "FORUM",
+    "GITHUB"
+  ],
+  "content_types": [
+    "VIDEO",
+    "CONVERSATION",
+    "SEARCH",
+    "ARTICLE"
+  ],
+  "signals": [
+    "POPULAR_NOW",
+    "RISING",
+    "EMERGING",
+    "RECURRING_PROBLEM",
+    "SEARCH_INTEREST",
+    "CREATIVE_PATTERN",
+    "NEW_DEVELOPMENT",
+    "INSUFFICIENT_EVIDENCE"
+  ],
+  "evidence_qualities": [
+    "ATTRIBUTED_METADATA",
+    "PERMITTED_TEXT",
+    "INSPECTED_MEDIA"
+  ],
+  "categories": [
+    "COFFEE_BREWING",
+    "CONTENT_CREATION",
+    "CUSTOMER_DISCOVERY",
+    "SOFTWARE_DEVELOPMENT",
+    "PRODUCTIVITY",
+    "FITNESS",
+    "GARDENING",
+    "COOKING",
+    "SKINCARE",
+    "TRAVEL",
+    "AI",
+    "ECOMMERCE",
+    "FINANCE",
+    "EDUCATION",
+    "ENTERTAINMENT",
+    "SUSTAINABILITY",
+    "MARKETING",
+    "SALES",
+    "HEALTHCARE",
+    "HEALTH_WELLNESS",
+    "HOME_SERVICES",
+    "REAL_ESTATE",
+    "FASHION",
+    "BEAUTY",
+    "PETS",
+    "GAMING",
+    "PARENTING",
+    "AUTOMOTIVE",
+    "LEGAL",
+    "RESTAURANTS",
+    "SPORTS",
+    "CRYPTO",
+    "CAREERS",
+    "HOME_DECOR",
+    "WEDDINGS",
+    "OUTDOORS",
+    "PHOTOGRAPHY",
+    "CRAFTS_DIY",
+    "CYBERSECURITY",
+    "NONPROFIT",
+    "MUSIC_CREATION",
+    "DRINKS",
+    "GENERAL"
+  ],
+  "discover_scopes": [
+    "global",
+    "core",
+    "adjacent"
+  ],
+  "discover_channels": [
+    "search",
+    "ai_search",
+    "conversations",
+    "video"
+  ],
+  "filter_limits": {
+    "lookback_hours": {
+      "min": 1,
+      "max": 720
+    },
+    "history_days": {
+      "min": 1,
+      "max": 90
+    },
+    "limit": {
+      "min": 1,
+      "max": 100
+    }
+  },
+  "typed_error_codes": [
+    "AUTH_REQUIRED",
+    "INSUFFICIENT_CREDITS",
+    "CREDIT_QUOTE_EXCEEDS_LIMIT",
+    "INSUFFICIENT_SCOPE",
+    "IDEMPOTENCY_CONFLICT",
+    "CONTEXT_NOT_CURRENT",
+    "PRODUCT_REQUIRES_CONTEXT",
+    "RESULT_UNAVAILABLE",
+    "RATE_LIMITED",
+    "REQUEST_OUTCOME_UNCONFIRMED"
+  ],
+  "error_codes": {
+    "AUTH_REQUIRED": {
+      "class": "AuthRequiredError",
+      "kind": "auth"
+    },
+    "AUTH_INVALID": {
+      "class": "AuthRequiredError",
+      "kind": "auth"
+    },
+    "AUTH_EXPIRED": {
+      "class": "AuthRequiredError",
+      "kind": "auth"
+    },
+    "AUTH_REVOKED": {
+      "class": "AuthRequiredError",
+      "kind": "auth"
+    },
+    "INSUFFICIENT_SCOPE": {
+      "class": "InsufficientScopeError",
+      "kind": "auth"
+    },
+    "FORBIDDEN": {
+      "class": "InsufficientScopeError",
+      "kind": "auth"
+    },
+    "ORIGIN_REJECTED": {
+      "class": "InsufficientScopeError",
+      "kind": "auth"
+    },
+    "INSUFFICIENT_CREDITS": {
+      "class": "InsufficientCreditsError",
+      "kind": "credits"
+    },
+    "CREDIT_QUOTE_EXCEEDS_LIMIT": {
+      "class": "CreditQuoteExceedsLimitError",
+      "kind": "credits"
+    },
+    "IDEMPOTENCY_CONFLICT": {
+      "class": "IdempotencyConflictError",
+      "kind": "conflict"
+    },
+    "CONTEXT_NOT_CURRENT": {
+      "class": "ContextNotCurrentError",
+      "kind": "conflict"
+    },
+    "PRODUCT_REQUIRES_CONTEXT": {
+      "class": "ProductRequiresContextError",
+      "kind": "usage"
+    },
+    "RESULT_UNAVAILABLE": {
+      "class": "ResultUnavailableError",
+      "kind": "conflict"
+    },
+    "RESULT_CONTEXT_CHANGED": {
+      "class": "ResultUnavailableError",
+      "kind": "conflict"
+    },
+    "RESULT_EVIDENCE_UNAVAILABLE": {
+      "class": "ResultUnavailableError",
+      "kind": "conflict"
+    },
+    "RATE_LIMITED": {
+      "class": "RateLimitedError",
+      "kind": "rate_limited"
+    },
+    "CONCURRENT_LIMIT": {
+      "class": "RateLimitedError",
+      "kind": "rate_limited"
+    },
+    "REQUEST_OUTCOME_UNCONFIRMED": {
+      "class": "OutcomeUnconfirmedError",
+      "kind": "unconfirmed"
+    },
+    "REQUEST_IN_PROGRESS": {
+      "class": "OutcomeUnconfirmedError",
+      "kind": "unconfirmed"
+    },
+    "EFFECT_UNKNOWN": {
+      "class": "OutcomeUnconfirmedError",
+      "kind": "unconfirmed"
+    }
+  },
+  "status_kinds": {
+    "400": {
+      "class": "InvalidRequestError",
+      "kind": "usage"
+    },
+    "401": {
+      "class": "AuthRequiredError",
+      "kind": "auth"
+    },
+    "402": {
+      "class": "InsufficientCreditsError",
+      "kind": "credits"
+    },
+    "403": {
+      "class": "InsufficientScopeError",
+      "kind": "auth"
+    },
+    "404": {
+      "class": "InvalidRequestError",
+      "kind": "usage"
+    },
+    "405": {
+      "class": "InvalidRequestError",
+      "kind": "usage"
+    },
+    "409": {
+      "class": "ConflictError",
+      "kind": "conflict"
+    },
+    "410": {
+      "class": "ResultUnavailableError",
+      "kind": "conflict"
+    },
+    "413": {
+      "class": "InvalidRequestError",
+      "kind": "usage"
+    },
+    "415": {
+      "class": "InvalidRequestError",
+      "kind": "usage"
+    },
+    "429": {
+      "class": "RateLimitedError",
+      "kind": "rate_limited"
+    },
+    "503": {
+      "class": "OutcomeUnconfirmedError",
+      "kind": "unconfirmed"
+    }
+  },
+  "exit_codes": {
+    "usage": 1,
+    "auth": 2,
+    "credits": 3,
+    "conflict": 4,
+    "rate_limited": 5,
+    "unconfirmed": 6,
+    "network": 7
+  }
+}

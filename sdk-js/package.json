@@ -1,0 +1,55 @@
+{
+  "name": "trendsfast",
+  "version": "0.1.0",
+  "description": "TrendsFast SDK for Node.js: source-backed market evidence for AI agents (customers, trending, competitors, formats, search), with idempotent paid calls and free recovery.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://trendsfast.com/docs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meestierolff/trendsfast-open.git",
+    "directory": "sdk-js"
+  },
+  "bugs": {
+    "url": "https://trendsfast.com/support"
+  },
+  "author": {
+    "name": "TrendsFast",
+    "url": "https://trendsfast.com"
+  },
+  "keywords": [
+    "trendsfast",
+    "trends",
+    "market-research",
+    "ai-agents",
+    "reddit",
+    "tiktok",
+    "seo",
+    "sdk"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "npm run build && node --test \"test/**/*.test.mjs\"",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,64 @@
+# Offline tests for the CLI and both SDKs, against fixtures produced by the TrendsFast API's own
+# response schema. Nothing here calls the API, holds a key or publishes.
+name: Kit CI
+
+on:
+  pull_request:
+    paths:
+      - "cli/**"
+      - "sdk-js/**"
+      - "python/**"
+      - "skills/**"
+      - ".github/workflows/kit-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cli/**"
+      - "sdk-js/**"
+      - "python/**"
+      - "skills/**"
+      - ".github/workflows/kit-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    name: ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [cli, sdk-js]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+      - name: Install
+        run: npm ci --ignore-scripts
+      - name: Test
+        run: npm test
+
+  python:
+    name: python
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test
+        run: python3 -m unittest discover -v
