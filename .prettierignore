@@ -4,3 +4,7 @@ skills/trendsfast/SKILL.md
 n8n-nodes-trendsfast/package-lock.json
 n8n-nodes-trendsfast/dist/
 n8n-nodes-trendsfast/
+cli/
+sdk-js/
+python/
+skills/trendsfast/references/

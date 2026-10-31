@@ -6,6 +6,9 @@ historical implementation.
 
 ## Intended public scope
 
+- the `trendsfast` command (`cli/`, npm `trendsfast-cli`), which installs the skill and signs in
+  through the browser, and the `trendsfast` SDKs for Node (`sdk-js/`) and Python (`python/`),
+  added on 2026-10-31;
 - the credential-free `trendsfast` agent skill for the V3 API and MCP server;
 - a Claude Code plugin and marketplace that connect the remote MCP server;
 - `n8n-nodes-trendsfast`, an n8n community node over the public V3 REST API, with

@@ -1,0 +1,131 @@
+{
+  "version": "trends-api-v3",
+  "result_id": "33333333-3333-4333-8333-333333333333",
+  "request_id": "22222222-2222-4222-8222-222222222222",
+  "operation": "global",
+  "generated_at": "2026-10-15T12:00:00Z",
+  "read_at": "2026-10-15T12:00:00Z",
+  "new_research": false,
+  "data": {
+    "version": "trend-intelligence-v3",
+    "snapshot_id": "snapshot_fixture",
+    "as_of": "2026-10-15T12:00:00Z",
+    "read_at": "2026-10-15T12:00:00Z",
+    "classification_as_of": "2026-10-15T12:00:00Z",
+    "classification_window": {
+      "lookback_hours": 72,
+      "observed_from": "2026-10-12T12:00:00Z",
+      "observed_to": "2026-10-15T12:00:00Z"
+    },
+    "context": null,
+    "items": [
+      {
+        "id": "item_fixture",
+        "cluster_id": "cluster_fixture",
+        "entity": {
+          "id": "entity_fixture",
+          "platform": "WEB",
+          "native_id": "fixture-article",
+          "original_url": "https://example.invalid/evidence",
+          "creator": null
+        },
+        "content_type": "ARTICLE",
+        "current_observation": {
+          "version": "trend-index-observation-v3",
+          "id": "observation_fixture",
+          "entity": {
+            "id": "entity_fixture",
+            "platform": "WEB",
+            "native_id": "fixture-article",
+            "original_url": "https://example.invalid/evidence",
+            "creator": null
+          },
+          "collection_id": "11111111-1111-4111-8111-111111111111",
+          "rights_receipt_id": "44444444-4444-4444-8444-444444444444",
+          "source": "Synthetic article source",
+          "origin": "FIXTURE",
+          "content_type": "ARTICLE",
+          "title": "A brewing observation",
+          "excerpt": null,
+          "published_at": null,
+          "observed_at": "2026-10-15T12:00:00Z",
+          "expires_at": "2026-10-16T12:00:00Z",
+          "language": "en",
+          "country": "US",
+          "region": null,
+          "observed_market": null,
+          "categories": [
+            "COFFEE_BREWING"
+          ],
+          "metrics": [
+            {
+              "name": "views",
+              "value": 0,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed view count",
+              "scope": "This article",
+              "observed_at": "2026-10-15T12:00:00Z",
+              "period_start": null,
+              "period_end": null
+            },
+            {
+              "name": "likes",
+              "value": null,
+              "unit": "COUNT",
+              "semantics": "CUMULATIVE_COUNTER",
+              "definition": "Observed like count",
+              "scope": "This article",
+              "observed_at": "2026-10-15T12:00:00Z",
+              "period_start": null,
+              "period_end": null
+            }
+          ],
+          "video": null,
+          "conversation": null,
+          "search": null,
+          "evidence_quality": "ATTRIBUTED_METADATA",
+          "limitations": [
+            "Metadata only; synthetic source."
+          ]
+        },
+        "observation_ids": [
+          "observation_fixture"
+        ],
+        "signal": "INSUFFICIENT_EVIDENCE",
+        "signal_basis": "One snapshot cannot establish momentum.",
+        "measured_growth": "NOT_COMPARABLE",
+        "growth": [],
+        "virality": "NOT_ESTABLISHED",
+        "ring": "GLOBAL",
+        "relevance": {
+          "basis": "CONTROLLED_DOMAIN_FAMILIES_AND_TOKEN_MATCH",
+          "score": 0,
+          "matched_fields": [],
+          "matched_categories": [],
+          "product_fit": "REVIEW_REQUIRED",
+          "explanation": "Global evidence; review relevance."
+        },
+        "freshness": "UNDATED_REFERENCE",
+        "limitations": [
+          "No publication date."
+        ]
+      }
+    ],
+    "coverage": [],
+    "excluded_count": 0,
+    "truncated": false,
+    "new_research": false,
+    "limitations": [
+      "Synthetic fixture only."
+    ]
+  },
+  "usage": {
+    "credits_charged": 1,
+    "read_charge": 0,
+    "this_request_credits": 1,
+    "catalog_version": "fixture",
+    "replayed": false
+  },
+  "next_cursor": null
+}

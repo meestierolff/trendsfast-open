@@ -1,5 +1,8 @@
 # TrendsFast REST recipes
 
+Use these only when neither the `trendsfast_*` MCP tools nor the `trendsfast` CLI is
+available: the CLI quotes, caps, saves the request ID and recovers for you.
+
 The base URL is `https://trendsfast.com`. Every call sends
 `Authorization: Bearer $TRENDSFAST_API_KEY`, so the key stays in the environment. The
 commands run in bash or zsh with curl. The contract is
