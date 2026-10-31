@@ -123,7 +123,8 @@ export async function init(ctx: Context, flags: Record<string, unknown>): Promis
 
   const detected = installedHarnesses(ctx.env).map((h) => h.id).filter((id) => MCP_SNIPPETS[id]);
   if (detected.length) {
-    ctx.out("\nOptional: also connect the MCP server. The skill and this CLI work without it; each line reads the key from TRENDSFAST_API_KEY in that client's environment.");
+    // The key this CLI signed in with stays inside it and is never shown, so an MCP client needs its own.
+    ctx.out(`\nOptional: also connect the MCP server. The skill and this CLI work without it. An MCP client needs a key of its own, because the one you signed in with stays inside this CLI: create one at ${API_KEYS_URL} and set it as TRENDSFAST_API_KEY in that client's environment yourself, never in a chat. Then:`);
     for (const id of detected) ctx.out(`\n${MCP_SNIPPETS[id]!.name}:\n${MCP_SNIPPETS[id]!.snippet}`);
   }
   ctx.out("\nNext: ask your agent about your market, or try `trendsfast quote customers` (free) and `trendsfast customers --max-credits 10`.");
