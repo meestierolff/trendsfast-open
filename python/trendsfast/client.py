@@ -314,6 +314,21 @@ class TrendsFast:
         payload.update(self._scope(options))
         return self.query("discover", payload, request_id=options.get("request_id"), max_credits=options.get("max_credits"))
 
+    # ---- The video outlier check (paid; reads the creator's account) -----------------------
+
+    def outlier(self, url: str, handle: Optional[str] = None, **options: Any) -> TrendsResult:
+        """Video outlier check (5 credits, charged only when the video is found): one TikTok,
+        Instagram or YouTube video against its creator's recent posts, with its outlier score in
+        ``data["video_outlier"]``. A TikTok link names its creator; an Instagram or YouTube
+        link needs ``handle``. A link TrendsFast cannot read is refused before any charge."""
+        _check_options(options, _CALL_KEYS, "outlier")
+        payload: Dict[str, Any] = {"url": _require_text(url, "The video URL", 1, 500)}
+        if handle is not None:
+            payload["handle"] = _require_text(handle, "The handle", 1, 100)
+        return self.query(
+            "outlier", payload, request_id=options.get("request_id"), max_credits=options.get("max_credits")
+        )
+
     def query(
         self, operation: str, input: Dict[str, Any], request_id: Optional[str] = None, max_credits: Optional[int] = None
     ) -> TrendsResult:

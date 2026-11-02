@@ -5,6 +5,7 @@ import { productFields, productOperations } from './product';
 import { questionFields, questionOperations } from './question';
 import { requestFields, requestOperations } from './request';
 import { resultFields, resultOperations } from './result';
+import { videoFields, videoOperations } from './video';
 
 export const trendsFastProperties: INodeProperties[] = [
 	{
@@ -43,6 +44,11 @@ export const trendsFastProperties: INodeProperties[] = [
 				value: 'result',
 				description: 'A saved result, read again for free',
 			},
+			{
+				name: 'Video',
+				value: 'video',
+				description: 'One video checked against its creator’s recent posts',
+			},
 		],
 		default: 'product',
 	},
@@ -52,6 +58,8 @@ export const trendsFastProperties: INodeProperties[] = [
 	...globalTrendFields,
 	...questionOperations,
 	...questionFields,
+	...videoOperations,
+	...videoFields,
 	...resultOperations,
 	...resultFields,
 	...requestOperations,

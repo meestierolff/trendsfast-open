@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { run } from "./helpers.mjs";
 
-const COMMANDS = ["init", "login", "logout", "whoami", "doctor", "context", "credits", "quote", "history", "result", "request", "customers", "trending", "competitors", "formats", "search", "global", "niche", "ask", "discover"];
+const COMMANDS = ["init", "login", "logout", "whoami", "doctor", "context", "credits", "quote", "history", "result", "request", "customers", "trending", "competitors", "formats", "search", "global", "niche", "ask", "discover", "outlier"];
 
 describe("help", () => {
   it("lists every command, its price, the exit codes and the agent sign-in path", async () => {
     const { code, stdout } = await run(["--help"]);
     assert.equal(code, 0);
     for (const command of COMMANDS) assert.match(stdout, new RegExp(`^  ${command} `, "m"), command);
-    for (const [command, price] of [["customers", 10], ["trending", 25], ["competitors", 30], ["formats", 20], ["search", 35]])
+    for (const [command, price] of [["customers", 10], ["trending", 25], ["competitors", 30], ["formats", 20], ["search", 35], ["outlier", 5]])
       assert.match(stdout, new RegExp(`${command}\\s+${price} credits`));
     for (const exit of [0, 1, 2, 3, 4, 5, 6, 7]) assert.match(stdout, new RegExp(`^  ${exit}  `, "m"));
     assert.match(stdout, /trendsfast login --background/);

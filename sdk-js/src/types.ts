@@ -104,6 +104,12 @@ export interface DiscoverOptions extends AskOptions {
   channels?: DiscoverChannel[];
 }
 
+export interface OutlierOptions extends CallOptions {
+  /** The creator's handle, with or without "@". An Instagram or YouTube link needs it; a
+   * TikTok link names its creator, and a handle given with one must agree. */
+  handle?: string;
+}
+
 export interface NicheContextField {
   field: string;
   value: string;
@@ -234,7 +240,13 @@ export interface Entity {
   platform: Platform;
   native_id: string;
   original_url: string | null;
-  creator: { native_id?: string; name: string | null; url?: string | null } | null;
+  creator: {
+    native_id?: string;
+    name: string | null;
+    url?: string | null;
+    /** The follower count the platform showed with the post, when it sent one. */
+    followers?: number;
+  } | null;
 }
 
 export interface TopicHistory {
@@ -248,6 +260,56 @@ export interface TopicHistory {
   as_of: string;
   method_version: string;
   series_method_version: string;
+}
+
+/** How a post performed by Virlo's published math; a part is null when an input was not observed. */
+export interface Performance {
+  method_version: "virality-v1";
+  /** A competitor account's post against the median views of that account's posts in the read. */
+  outlier: {
+    account: string;
+    posts: number;
+    median_views: number;
+    mean_views: number;
+    score: number;
+    label: "MEGA_VIRAL" | "VIRAL" | "ABOVE_AVERAGE" | "AVERAGE";
+    weighted_score: number;
+    breakout: boolean;
+    percentile: number | null;
+    z_score: number;
+    basis: string;
+  } | null;
+  engagement: {
+    rate: number;
+    label: "RESONANCE" | "PASSIVE" | null;
+    missing: ("likes" | "comments" | "shares")[];
+    basis: string;
+  } | null;
+  view_benchmark: {
+    surface: "TIKTOK" | "INSTAGRAM_REELS" | "YOUTUBE_SHORTS";
+    band: "TOP_1_PERCENT" | "TOP_10_PERCENT" | "ABOVE_MEDIAN" | "BELOW_MEDIAN";
+    times_median: number;
+    basis: string;
+  } | null;
+  /** Views against the follower count shown with the post: Virlo's Virality Score. */
+  virality?: {
+    followers: number;
+    score: number;
+    tier: "EXCEPTIONAL" | "VERY_STRONG" | "STRONG" | "PROMISING" | "ROUTINE";
+    views_per_follower: number;
+    multiple: "MEGA_OUTLIER" | "EXCEPTIONAL" | "NOTABLE" | null;
+    basis: string;
+  } | null;
+  /** A competitor account's average views against its followers: Virlo's creator outlier. */
+  creator?: {
+    account: string;
+    followers: number;
+    posts: number;
+    average_views: number;
+    outlier_ratio: number;
+    weighted_score: number;
+    basis: string;
+  } | null;
 }
 
 export interface IntelligenceItem {
@@ -279,6 +341,9 @@ export interface IntelligenceItem {
     caution: string;
   };
   topic_history?: TopicHistory | null;
+  performance?: Performance;
+  /** The video's hook type, labelled from its transcript's opening line. */
+  hook_type?: { type: string; method_version: "hook-rules-v1"; rule: string | null };
   [key: string]: unknown;
 }
 
@@ -370,6 +435,46 @@ export interface Intelligence {
   brief?: Brief;
   ai_answers?: { provider: string; asked: number; answers: AiAnswer[]; limitations: string[] };
   communities?: CommunityProfile[];
+  /** Hook types among the result's videos with Virlo's strong-hit rate, highest first. */
+  hook_types?: {
+    type: string;
+    videos: number;
+    scored: number;
+    strong: number;
+    strong_hit_rate: number | null;
+  }[];
+  /** A video outlier check's answer; absent from every other result. */
+  video_outlier?: VideoOutlier;
+}
+
+/** Virlo's video outlier check: the video's views against the median views of its creator's
+ * posts in one read of the account, the video included. Every score is null unless FOUND. */
+export interface VideoOutlier {
+  method_version: "virality-v1";
+  status: "FOUND" | "NOT_FOUND" | "NO_BASELINE";
+  video: {
+    platform: "TIKTOK" | "INSTAGRAM" | "YOUTUBE";
+    native_id: string;
+    url: string;
+    views: number | null;
+    published_at: string | null;
+  };
+  account: { handle: string; url: string };
+  /** Views ÷ the median views of the creator's posts in the read. */
+  outlier_score: number | null;
+  performance_label: "MEGA_VIRAL" | "VIRAL" | "ABOVE_AVERAGE" | "AVERAGE" | null;
+  /** ln(outlier_score) × ln(median_views); 0 when the video did not beat the median. */
+  weighted_score: number | null;
+  /** Share of the creator's other posts in the read with fewer views, 0–100. */
+  percentile: number | null;
+  z_score: number | null;
+  median_views: number | null;
+  mean_views: number | null;
+  videos_analyzed: number;
+  /** Over 3× the median. */
+  breakout: boolean | null;
+  /** How the score was measured, or why the video has none. */
+  basis: string;
 }
 
 export interface AskFinding {

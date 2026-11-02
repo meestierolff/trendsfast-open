@@ -4,7 +4,7 @@ export * from "./catalog.js";
 export * from "./errors.js";
 export type * from "./types.js";
 export { compactResult, resultIntelligence, clip } from "./compact.js";
-export type { CompactAnswer, CompactCommunity, CompactItem, CompactResult } from "./compact.js";
+export type { CompactAnswer, CompactCommunity, CompactItem, CompactResult, CompactVideoOutlier } from "./compact.js";
 export { configDirectory, credentialsPath, keyPrefix, readStoredCredentials, stateDirectory } from "./credentials.js";
 export type { StoredCredentials } from "./credentials.js";
 export { SDK_VERSION } from "./version.js";

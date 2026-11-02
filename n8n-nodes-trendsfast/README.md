@@ -50,6 +50,7 @@ n8n stores the key encrypted and adds the header to each request to `https://tre
 | Product | Get Quote | `GET /v3/trends/quote?operation=niche&product=…` | free |
 | Global Trend | Query | `POST /v3/trends/global` | 1 |
 | Question | Ask | `POST /v3/trends/ask` | 5 |
+| Video | Check Outlier (one video against its creator's recent posts; Instagram and YouTube links need Handle) | `POST /v3/trends/outlier` | 5, only when the video is found |
 | Result | Get | `GET /v3/trends/results/{result_id}` | free |
 | Request | Get by Request ID | `GET /v3/trends/requests/{request_id}` | free |
 | Account | Get Wallet | `GET /v3/trends/wallet` | free |

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-11-02)
+
+- Video: Check Outlier. One video link against its creator's recent posts (`POST /v3/trends/outlier`), 5 credits and only when the video is found; Instagram and YouTube links need the creator's handle.
+
 ## 0.1.1 (2026-10-29)
 
 - Published from GitHub Actions with an npm provenance statement, which n8n requires before it verifies a community node. The node is unchanged.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trendsfast"
-version = "0.1.0"
+version = "0.1.1"
 description = "TrendsFast SDK for Python: source-backed market evidence for AI agents (customers, trending, competitors, formats, search), with idempotent paid calls and free recovery."
 readme = "README.md"
 requires-python = ">=3.9"

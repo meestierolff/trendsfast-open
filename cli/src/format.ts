@@ -69,6 +69,18 @@ export function formatResult(compact: CompactResult, label: string): string {
   );
   if (compact.brief?.headline) lines.push(`Brief: ${compact.brief.headline}`);
 
+  const outlier = compact.video_outlier;
+  if (outlier) {
+    lines.push(
+      "",
+      outlier.status === "FOUND"
+        ? `Outlier: ${outlier.outlier_score}× ${outlier.account}'s median of ${number(outlier.median_views ?? 0)} views over ${outlier.videos_analyzed} posts · ${outlier.performance_label}${outlier.breakout ? ", breakout" : ""} · weighted ${outlier.weighted_score} · percentile ${outlier.percentile ?? "n/a"} · z ${outlier.z_score}`
+        : `Outlier: ${outlier.status} (no charge) · ${outlier.account}`,
+      `Why: ${outlier.basis}`,
+      `Video: ${outlier.video.url}${outlier.video.views === null ? "" : ` · ${number(outlier.video.views)} views`}`,
+    );
+  }
+
   if (compact.answer) {
     lines.push("", `Answer (${compact.answer.answer_status ?? "UNRATED"}): ${compact.answer.answer}`);
     if (compact.answer.findings.length) {
@@ -83,7 +95,7 @@ export function formatResult(compact: CompactResult, label: string): string {
     if (compact.answer.missing_inputs.length) lines.push(`Missing: ${compact.answer.missing_inputs.join("; ")}`);
     if (compact.answer.next_steps.length) lines.push(`Next steps: ${compact.answer.next_steps.join("; ")}`);
     if (compact.items.length) lines.push("", "Cited items:");
-  } else lines.push("");
+  } else lines.push("", ...(outlier && compact.items.length ? ["The creator's posts in the read:"] : []));
 
   if (!compact.items.length && !compact.answer)
     lines.push("No items matched. An empty result costs 0 credits; coverage below says what was read.");

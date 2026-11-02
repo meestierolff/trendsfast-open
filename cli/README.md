@@ -30,7 +30,7 @@ own tools or settings. `--agent claude-code` limits it to one agent; `--dry-run`
 
 It is one skill because agents read every installed skill's description at startup, in every
 project: about 70 tokens a session, where the eight skills it replaced cost about 620. The
-skill's `SKILL.md` (about 1,190 tokens, from 2,250) loads only when a task needs market
+skill's `SKILL.md` (about 1,200 tokens, from 2,250) loads only when a task needs market
 evidence, and each reference (one per product and workflow, plus setup, REST and errors) only
 for its job.
 
@@ -58,6 +58,7 @@ Set up       init · login · logout · whoami · doctor
 Free reads   context · credits · quote <command> · history · result <id> · request <id>
 Products     customers (10) · trending (25) · competitors (30) · formats (20) · search (35)
 Index reads  global (1) · niche "<description>" (3) · ask "<question>" (5) · discover (5)
+Checks       outlier <video-url> [--handle <handle>] (5, only when the video is found)
 ```
 
 `trendsfast --help` and `trendsfast <command> --help` document every flag.

@@ -147,6 +147,17 @@ const SCENARIOS = {
 		operation: 'ask',
 		question: 'What is rising in AI?',
 	},
+	'video outlier check, TikTok': {
+		resource: 'video',
+		operation: 'checkOutlier',
+		url: 'https://www.tiktok.com/@creator/video/7300000000000000000',
+	},
+	'video outlier check, Instagram with its handle': {
+		resource: 'video',
+		operation: 'checkOutlier',
+		url: 'https://www.instagram.com/reel/C0deExample/',
+		handle: '@creator',
+	},
 	'product quote': { resource: 'product', operation: 'getQuote', product: 'search' },
 	'result read, second page': {
 		resource: 'result',

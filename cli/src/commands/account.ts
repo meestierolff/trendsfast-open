@@ -38,14 +38,15 @@ export const credits = (ctx: Context, flags: Record<string, unknown>) =>
 export const history = (ctx: Context, flags: Record<string, unknown>) =>
   read(ctx, flags, () => ctx.client().history(flags.cursor as string | undefined), formatHistory, "history");
 
-/** What a command costs: `quote customers`, `quote trending`, `quote global`, `quote niche`. */
+/** What a command costs: `quote customers`, `quote trending`, `quote global`, `quote niche`,
+ * `quote outlier`. */
 export function quoteTarget(name: string | undefined): { operation: Operation; product?: ReturnType<typeof findProduct>; label: string } {
-  if (!name) throw new UsageError("Name the command to price: trendsfast quote <customers|trending|competitors|formats|search|global|niche|ask|discover>");
+  if (!name) throw new UsageError("Name the command to price: trendsfast quote <customers|trending|competitors|formats|search|global|niche|ask|discover|outlier>");
   const product = findProduct(name);
   if (product && (name === product.command || name !== "niche"))
     return { operation: "niche", product, label: `${product.name} (${product.command})` };
   if ((OPERATIONS as readonly string[]).includes(name)) return { operation: name as Operation, label: name };
-  throw new UsageError(`Nothing called "${name}" has a price. Use customers, trending, competitors, formats, search, global, niche, ask or discover.`);
+  throw new UsageError(`Nothing called "${name}" has a price. Use customers, trending, competitors, formats, search, global, niche, ask, discover or outlier.`);
 }
 
 export async function quote(ctx: Context, flags: Record<string, unknown>, positionals: string[]): Promise<number> {

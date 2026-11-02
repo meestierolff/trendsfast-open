@@ -11,6 +11,7 @@ import type {
   Intelligence,
   IntelligenceItem,
   TrendsResult,
+  VideoOutlier,
 } from "./types.js";
 
 export interface CompactItem {
@@ -46,6 +47,20 @@ export interface CompactItem {
     channels: number;
     velocity: number | null;
   } | null;
+  performance: {
+    outlier: {
+      label: string;
+      score: number;
+      breakout: boolean;
+      median_views: number;
+      posts: number;
+    } | null;
+    engagement_rate: number | null;
+    engagement: string | null;
+    view_band: string | null;
+    virality: { score: number; tier: string } | null;
+  } | null;
+  hook_type: string | null;
 }
 
 export interface CompactCommunity {
@@ -75,6 +90,24 @@ export interface CompactAnswer {
   findings: Record<string, unknown>[];
   missing_inputs: string[];
   next_steps: string[];
+}
+
+/** A video outlier check's answer, with Virlo's field names; every score is null unless FOUND. */
+export interface CompactVideoOutlier {
+  status: "FOUND" | "NOT_FOUND" | "NO_BASELINE";
+  video: { platform: string; url: string; views: number | null; published_at: string | null };
+  /** The creator's handle, as the platform writes it. */
+  account: string;
+  outlier_score: number | null;
+  performance_label: string | null;
+  weighted_score: number | null;
+  percentile: number | null;
+  z_score: number | null;
+  median_views: number | null;
+  mean_views: number | null;
+  videos_analyzed: number;
+  breakout: boolean | null;
+  basis: string;
 }
 
 export interface CompactResult {
@@ -118,8 +151,11 @@ export interface CompactResult {
       excerpt: string | null;
     }[];
   } | null;
+  hook_types: { type: string; videos: number; strong_hit_rate: number | null }[];
   /** An Ask's answer; null for every other operation. */
   answer: CompactAnswer | null;
+  /** A video outlier check's answer; null for every other operation. */
+  video_outlier: CompactVideoOutlier | null;
   limitations: string[];
 }
 
@@ -173,6 +209,26 @@ function compactItem(item: IntelligenceItem): CompactItem {
           velocity: item.topic_history.velocity,
         }
       : null,
+    performance: item.performance
+      ? {
+          outlier: item.performance.outlier
+            ? {
+                label: item.performance.outlier.label,
+                score: item.performance.outlier.score,
+                breakout: item.performance.outlier.breakout,
+                median_views: item.performance.outlier.median_views,
+                posts: item.performance.outlier.posts,
+              }
+            : null,
+          engagement_rate: item.performance.engagement?.rate ?? null,
+          engagement: item.performance.engagement?.label ?? null,
+          view_band: item.performance.view_benchmark?.band ?? null,
+          virality: item.performance.virality
+            ? { score: item.performance.virality.score, tier: item.performance.virality.tier }
+            : null,
+        }
+      : null,
+    hook_type: item.hook_type?.type ?? null,
   };
 }
 
@@ -215,6 +271,29 @@ function compactAnswer(ask: AskAnswer): CompactAnswer {
     })),
     missing_inputs: (ask.missing_inputs ?? []).map((entry) => clipped(entry, 300)),
     next_steps: (ask.next_steps ?? []).map((entry) => clipped(entry, 300)),
+  };
+}
+
+function compactVideoOutlier(outlier: VideoOutlier): CompactVideoOutlier {
+  return {
+    status: outlier.status,
+    video: {
+      platform: outlier.video.platform,
+      url: outlier.video.url,
+      views: outlier.video.views,
+      published_at: outlier.video.published_at,
+    },
+    account: clipped(outlier.account.handle, 61),
+    outlier_score: outlier.outlier_score,
+    performance_label: outlier.performance_label,
+    weighted_score: outlier.weighted_score,
+    percentile: outlier.percentile,
+    z_score: outlier.z_score,
+    median_views: outlier.median_views,
+    mean_views: outlier.mean_views,
+    videos_analyzed: outlier.videos_analyzed,
+    breakout: outlier.breakout,
+    basis: clipped(outlier.basis, 500),
   };
 }
 
@@ -300,7 +379,13 @@ export function compactResult(response: TrendsResult): CompactResult {
           })),
         }
       : null,
+    hook_types: (intelligence.hook_types ?? []).slice(0, 5).map((row) => ({
+      type: row.type,
+      videos: row.videos,
+      strong_hit_rate: row.strong_hit_rate,
+    })),
     answer: ask ? compactAnswer(ask) : null,
+    video_outlier: intelligence.video_outlier ? compactVideoOutlier(intelligence.video_outlier) : null,
     limitations: [...(ask?.limitations ?? []), ...intelligence.limitations]
       .slice(0, 3)
       .map((entry) => clipped(entry, 200)),

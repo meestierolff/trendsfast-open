@@ -46,6 +46,7 @@ https://trendsfast.com/dashboard/api-keys. A verified account gets 100 free cred
 | `niche(description?, options?)` | 3 | The index ranked against a niche you describe, or the brand without one |
 | `ask(question, options?)` | 5 | One bounded question answered from saved evidence |
 | `discover(question?, options?)` | 5 | One question across every scope and channel |
+| `outlier(url, { handle? })` | 5 | One TikTok, Instagram or YouTube video against its creator's recent posts (its views against their median); charged only when the video is found, and Instagram and YouTube links need `handle` |
 | `result(id, cursor?)` | free | Reread or page a saved result |
 | `recover(requestId)` | free | The outcome of a paid call by its request ID |
 | `history(cursor?)` | free | Your saved results |

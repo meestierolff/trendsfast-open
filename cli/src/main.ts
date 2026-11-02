@@ -91,6 +91,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
       case "niche":
       case "ask":
       case "discover":
+      case "outlier":
         return await runPaid(ctx, readPlan(command as Operation, positionals, flags), flags, argv);
       default: {
         const product = productByCommand(command);

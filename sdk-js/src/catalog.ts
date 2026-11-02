@@ -28,8 +28,8 @@ export const MAX_CREDITS_CEILING = 1000;
 export const PAID_TIMEOUT_MS = 150_000;
 export const READ_TIMEOUT_MS = 30_000;
 
-export type Operation = "global" | "niche" | "ask" | "discover";
-export const OPERATIONS: readonly Operation[] = ["global", "niche", "ask", "discover"];
+export type Operation = "global" | "niche" | "ask" | "discover" | "outlier";
+export const OPERATIONS: readonly Operation[] = ["global", "niche", "ask", "discover", "outlier"];
 
 export type ProductId = "customers" | "niche" | "competitors" | "formats" | "search";
 
@@ -93,20 +93,28 @@ export const PRODUCTS: readonly Product[] = [
   },
 ];
 
-/** What a read of saved observations costs, by operation. A niche read here names no
- * product: it ranks the index against a brand or a typed niche and collects nothing. */
+/** What one call of each operation costs when it names no product. Global, niche, ask and
+ * discover read saved observations only: a niche read here ranks the index against a brand or
+ * a typed niche and collects nothing. outlier is the video outlier check: it reads the video's
+ * creator's account, and is charged only when the video is found among its posts. */
 export const READ_CREDITS: Readonly<Record<Operation, number>> = {
   global: 1,
   niche: 3,
   ask: 5,
   discover: 5,
+  outlier: 5,
 };
+
+/** The platforms whose video links the video outlier check reads. A TikTok link names its
+ * creator; an Instagram or YouTube link needs the creator's handle too. */
+export const OUTLIER_PLATFORMS = ["TIKTOK", "INSTAGRAM", "YOUTUBE"] as const;
 
 export const PATHS = {
   global: "/v3/trends/global",
   niche: "/v3/trends/niche",
   ask: "/v3/trends/ask",
   discover: "/v3/trends/discover",
+  outlier: "/v3/trends/outlier",
   result: "/v3/trends/results/{id}",
   request: "/v3/trends/requests/{id}",
   wallet: "/v3/trends/wallet",

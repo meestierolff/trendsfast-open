@@ -1,6 +1,6 @@
 {
   "name": "trendsfast",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TrendsFast SDK for Node.js: source-backed market evidence for AI agents (customers, trending, competitors, formats, search), with idempotent paid calls and free recovery.",
   "license": "MIT",
   "type": "module",

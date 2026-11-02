@@ -27,6 +27,11 @@ Only the whole index, without a brand? `trendsfast global --max-credits 1` is ch
 - `topic_history`: EMERGING, RISING, PEAKING, DECLINING or EVERGREEN, since when and on how many
   channels. It is the only basis for saying a topic is rising; without it, say what was
   measured, not where it is heading.
+- `performance`: a short video's `view_benchmark` band against its own platform (never compare
+  raw views across platforms) and its `engagement` rate (over 5% resonance, under 1% passive).
+  Where a follower count came with the post, `performance.virality` is the Virality Score,
+  ln(views ÷ followers) × ln(followers): rank by it, not by raw views (18 or more is strong, 35
+  or more exceptional).
 - `communities`: the brand's communities' rules and play; read them before drafting a post.
 - `brief` and `coverage`: what each item is good for, and what was not collected.
 
