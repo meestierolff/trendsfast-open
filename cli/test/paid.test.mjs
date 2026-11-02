@@ -154,6 +154,30 @@ describe("paid commands", () => {
     assert.match(asked.stdout, /Answer \(PARTIAL\): Late payment/);
   });
 
+  it("checks one video against its creator, sending the link and the handle Instagram needs", async () => {
+    const env = signedIn().env;
+    const check = api({ price: 5, paid: (call) => json(resultFor(call, "outlier-result.json")) });
+    const done = await run(["outlier", "https://www.instagram.com/reel/C0deExample/", "--handle", "creator", "--max-credits", "5"], { env, fetch: check.fetch });
+    assert.equal(done.code, 0, done.stderr);
+    const sent = check.calls.find((c) => c.method === "POST");
+    assert.equal(sent.path, "/v3/trends/outlier");
+    assert.equal(sent.body.max_credits, 5);
+    assert.deepEqual(sent.body.input, { url: "https://www.instagram.com/reel/C0deExample/", handle: "creator" });
+    assert.match(done.stderr, /Quote: video outlier check costs 5 credits/);
+    assert.match(done.stdout, /^Outlier: 6\.56× /m);
+    assert.match(done.stdout, /The creator's posts in the read:/);
+    const tiktok = api({ price: 5, paid: (call) => json(resultFor(call, "outlier-result.json")) });
+    await run(["outlier", "https://www.tiktok.com/@creator/video/7300000000000000000", "--max-credits", "5"], { env, fetch: tiktok.fetch });
+    assert.deepEqual(tiktok.calls.find((c) => c.method === "POST").body.input, {
+      url: "https://www.tiktok.com/@creator/video/7300000000000000000",
+    });
+    const none = api();
+    const missing = await run(["outlier", "--max-credits", "5"], { env, fetch: none.fetch });
+    assert.equal(missing.code, 1);
+    assert.match(missing.stderr, /Give one video link/);
+    assert.ok(!none.calls.some((c) => c.method === "POST"));
+  });
+
   it("rejects an unknown platform before anything is sent", async () => {
     const { fetch, calls } = api();
     const { code, stderr } = await run(["customers", "--platforms", "myspace", "--max-credits", "10"], { env: signedIn().env, fetch });
@@ -176,7 +200,8 @@ describe("free reads", () => {
     await run(["quote", "trending"], { env, fetch });
     await run(["quote", "niche"], { env, fetch });
     await run(["quote", "global"], { env, fetch });
-    assert.deepEqual(calls.map((c) => c.url.search), ["?operation=niche&product=niche", "?operation=niche", "?operation=global"]);
+    await run(["quote", "outlier"], { env, fetch });
+    assert.deepEqual(calls.map((c) => c.url.search), ["?operation=niche&product=niche", "?operation=niche", "?operation=global", "?operation=outlier"]);
   });
 
   it("recovers a request by its ID and marks it completed in the journal", async () => {

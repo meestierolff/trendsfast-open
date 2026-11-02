@@ -22,6 +22,14 @@ Over MCP, `trendsfast_niche_trends` with these arguments (REST: `POST /v3/trends
 
 - Each video: title, creator, platform, observed time, views and engagement, link, its
   `format` and its `hook`, the opening line from the transcript.
+- `performance`: each video's band against its platform's benchmark, its engagement rate and,
+  where the follower count came with it, its Virality Score; rank by the score where there is
+  one, never by raw views across platforms.
+- `hook_type`: each hook's type (QUESTION, STATISTIC, NEGATION, TUTORIAL_PROMISE…), labelled by
+  Claude (`hook-model-v1`) or by a stated rule (`hook-rules-v1`, which names the rule);
+  `hook_types`: which types win, ranked by `strong_hit_rate` (the share
+  of videos with a Virality Score of 18 or more). Recommend hook types by that rate, never by an
+  average, and say how many scored videos it rests on.
 - Describe the pattern the top videos share (format, hook, length) from these fields only. A
   brief for a new video may borrow the structure, never the creator's words or footage.
 - `coverage`: which platforms were read; a platform missing was not observed.

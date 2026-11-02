@@ -104,6 +104,20 @@ describe("index reads", () => {
     ]);
   });
 
+  it("checks one video against its creator, sending the handle only when given", async () => {
+    const { fetch, calls } = fakeFetch((call) => json(resultFor(call, "outlier-result.json")));
+    const tf = client(fetch);
+    const result = await tf.outlier("https://www.instagram.com/reel/C0deExample/", { handle: "creator" });
+    await tf.outlier("https://www.tiktok.com/@creator/video/7300000000000000000");
+    assert.deepEqual(calls.map((c) => [c.path, c.body.max_credits, c.body.input]), [
+      ["/v3/trends/outlier", 5, { url: "https://www.instagram.com/reel/C0deExample/", handle: "creator" }],
+      ["/v3/trends/outlier", 5, { url: "https://www.tiktok.com/@creator/video/7300000000000000000" }],
+    ]);
+    assert.equal(result.data.video_outlier.status, "FOUND");
+    assert.equal(sdk.compactResult(result).video_outlier.outlier_score, result.data.video_outlier.outlier_score);
+    await assert.rejects(tf.outlier(""), sdk.InvalidRequestError);
+  });
+
   it("reads the brand context for a niche read without a description", async () => {
     const { fetch, calls } = fakeFetch((call) => (call.path === "/v3/trends/context" ? json(contextBody) : json(resultFor(call))));
     await client(fetch).niche();

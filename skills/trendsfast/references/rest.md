@@ -1,11 +1,10 @@
 # TrendsFast REST recipes
 
-Use these only when neither the `trendsfast_*` MCP tools nor the `trendsfast` CLI is
-available: the CLI quotes, caps, saves the request ID and recovers for you.
+Only when neither the `trendsfast_*` MCP tools nor the `trendsfast` CLI is available: the
+CLI quotes, caps, saves the request ID and recovers for you.
 
-The base URL is `https://trendsfast.com`. Every call sends
-`Authorization: Bearer $TRENDSFAST_API_KEY`, so the key stays in the environment. The
-commands run in bash or zsh with curl. The contract is
+Every call sends `Authorization: Bearer $TRENDSFAST_API_KEY`, so the key stays in the
+environment; the commands run in bash or zsh with curl. The contract is
 https://trendsfast.com/v3/openapi.json.
 
 ## Free reads
@@ -52,7 +51,9 @@ curl -sS -X POST https://trendsfast.com/v3/trends/niche \
 EOF
 ```
 
-Replace `<context_id>` with the value from `/v3/trends/context`.
+Replace `<context_id>` with the value from `/v3/trends/context`. What is trending
+everywhere needs no brand: the same call to `POST /v3/trends/global` with
+`"max_credits": 1` and `"input": { "lookback_hours": 72, "limit": 10 }`.
 
 ## Read a niche the user typed
 
@@ -79,23 +80,26 @@ curl -sS -X POST https://trendsfast.com/v3/trends/niche \
 EOF
 ```
 
-## What is trending everywhere
+## Check one video against its creator
 
-No brand needed:
+5 credits, only if the video is among its creator's recent posts; Instagram and YouTube
+links also need `"handle"`:
 
 ```bash
 REQUEST_ID=$(uuidgen 2>/dev/null || python3 -c 'import uuid; print(uuid.uuid4())')
-curl -sS -X POST https://trendsfast.com/v3/trends/global \
+curl -sS -X POST https://trendsfast.com/v3/trends/outlier \
   -H "Authorization: Bearer $TRENDSFAST_API_KEY" \
   -H "Content-Type: application/json" \
   --data-binary @- <<EOF
 {
   "request_id": "$REQUEST_ID",
-  "max_credits": 1,
-  "input": { "lookback_hours": 72, "limit": 10 }
+  "max_credits": 5,
+  "input": { "url": "https://www.tiktok.com/@creator/video/7300000000000000000" }
 }
 EOF
 ```
+
+`data.video_outlier` has the score, or NOT_FOUND or NO_BASELINE and why.
 
 ## Recover and page
 

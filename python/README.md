@@ -33,8 +33,10 @@ https://trendsfast.com/dashboard/api-keys. A verified account gets 100 free cred
 `context()`, `wallet()`, `quote(operation, product=None)` and `history(cursor=None)` are free,
 as are `result(id, cursor=None)` and `recover(request_id)`. The paid calls are
 `customers()` (10 credits), `trending()` (25), `competitors()` (30), `formats()` (20),
-`search()` (35), `global_trends()` (1), `niche(description)` (3), `ask(question)` (5) and
-`discover(question=None)` (5).
+`search()` (35), `global_trends()` (1), `niche(description)` (3), `ask(question)` (5),
+`discover(question=None)` (5) and `outlier(url, handle=None)` (5, charged only when the video
+is found: one TikTok, Instagram or YouTube video against its creator's recent posts; Instagram
+and YouTube links need `handle`).
 
 Options are keyword arguments named as the API names them: `lookback_hours`,
 `observed_from`, `observed_to`, `platforms`, `content_types`, `limit` and the other filters,

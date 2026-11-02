@@ -4,7 +4,7 @@
 import { flagHelp, type FlagSpec } from "./args.js";
 import { INIT_FLAGS } from "./commands/init.js";
 import { LOGIN_FLAGS } from "./commands/login.js";
-import { ASK_FLAGS, DISCOVER_FLAGS, GLOBAL_FLAGS, NICHE_FLAGS, PRODUCT_FLAGS } from "./commands/query.js";
+import { ASK_FLAGS, DISCOVER_FLAGS, GLOBAL_FLAGS, NICHE_FLAGS, OUTLIER_FLAGS, PRODUCT_FLAGS } from "./commands/query.js";
 import { OUTPUT_FLAGS } from "./commands/shared.js";
 import { PRODUCTS, READ_CREDITS, creditsLabel } from "./sdk/catalog.js";
 import { harnesses } from "./skills/targets.js";
@@ -12,7 +12,7 @@ import { CLI_VERSION } from "./version.js";
 
 export interface CommandHelp {
   name: string;
-  group: "setup" | "free" | "product" | "read";
+  group: "setup" | "free" | "product" | "read" | "check";
   summary: string;
   usage: string;
   flags: FlagSpec[];
@@ -132,7 +132,7 @@ export const COMMANDS: CommandHelp[] = [
     name: "quote",
     group: "free",
     summary: "The price of a command before you run it",
-    usage: "trendsfast quote <customers|trending|competitors|formats|search|global|niche|ask|discover>",
+    usage: "trendsfast quote <customers|trending|competitors|formats|search|global|niche|ask|discover|outlier>",
     flags: [...OUTPUT_FLAGS, BASE_URL_FLAG],
     details: [
       "Free. `quote trending` prices the Trending product; `quote niche` prices a plain niche read without a product.",
@@ -211,6 +211,23 @@ export const COMMANDS: CommandHelp[] = [
     details: ["Reads saved observations only. A channel with nothing permitted is reported, not hidden.", ...PAID_DETAILS],
     examples: [`trendsfast discover "What is rising in my niche?" --brand --max-credits ${READ_CREDITS.discover}`],
   },
+  {
+    name: "outlier",
+    group: "check",
+    summary: `${creditsLabel(READ_CREDITS.outlier).padEnd(10)} One video against its creator's recent posts: its outlier score`,
+    usage: `trendsfast outlier <video-url> --max-credits ${READ_CREDITS.outlier} [--handle <handle>]`,
+    flags: [...OUTLIER_FLAGS, BASE_URL_FLAG],
+    details: [
+      "Reads the public account of the video's creator (its newest 20 posts from the last month), or reuses a read of it from the last six hours at no extra cost, and scores the video's views against the median views of those posts, the video included: outlier_score, performance_label (MEGA_VIRAL 10× or more, VIRAL 3× to under 10×, ABOVE_AVERAGE 1.5× to under 3×, AVERAGE below), weighted_score, percentile, z_score, median and mean views, videos_analyzed and breakout (over 3×).",
+      `Charged ${creditsLabel(READ_CREDITS.outlier)} only when the video is found among those posts with a view count. NOT_FOUND (older than a month, or outside the newest 20) and NO_BASELINE cost nothing and say why.`,
+      "A TikTok link names its creator. An Instagram (/reel/ or /p/) or YouTube (/shorts/ or watch?v=) link needs --handle; without it, or for a link TrendsFast cannot read, the call is refused before anything is charged.",
+      ...PAID_DETAILS,
+    ],
+    examples: [
+      `trendsfast outlier https://www.tiktok.com/@creator/video/7300000000000000000 --max-credits ${READ_CREDITS.outlier}`,
+      `trendsfast outlier https://www.instagram.com/reel/C0deExample/ --handle creator --max-credits ${READ_CREDITS.outlier}`,
+    ],
+  },
 ];
 
 const EXIT_CODES = [
@@ -243,6 +260,9 @@ export function mainHelp(): string {
     "",
     "Index reads (paid, cheaper; saved observations only)",
     ...group("read"),
+    "",
+    "Checks (paid; read one creator's account, charged only when the video is found)",
+    ...group("check"),
     "",
     "Paid calls",
     "  The free quote goes to stderr first. Without a terminal (agents, scripts) a paid command needs",

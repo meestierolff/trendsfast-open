@@ -18,7 +18,7 @@ const node = loadNode();
 const { description } = node;
 const properties = description.properties;
 
-const PAID = ['product.run', 'globalTrend.query', 'question.ask'];
+const PAID = ['product.run', 'globalTrend.query', 'question.ask', 'video.checkOutlier'];
 const FREE = [
 	'product.getQuote',
 	'result.get',
@@ -67,6 +67,7 @@ test('it offers the agreed resources and operations', () => {
 		'question',
 		'request',
 		'result',
+		'video',
 	]);
 	const keys = resources.options.flatMap((resource) =>
 		operationsOf(resource.value).map((operation) => `${resource.value}.${operation.value}`),
@@ -145,6 +146,7 @@ test('Max Credits is required and defaults to the price of what runs', () => {
 	for (const [parameters, credits] of [
 		[{ resource: 'globalTrend', operation: 'query' }, 1],
 		[{ resource: 'question', operation: 'ask' }, 5],
+		[{ resource: 'video', operation: 'checkOutlier' }, 5],
 	]) {
 		const shown = shownProperties(parameters).filter((property) => property.name === 'maxCredits');
 		assert.equal(shown.length, 1);

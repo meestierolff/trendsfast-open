@@ -33,6 +33,7 @@ import type {
   GlobalOptions,
   HistoryResponse,
   NicheOptions,
+  OutlierOptions,
   ProductOptions,
   QuoteResponse,
   TemporaryNiche,
@@ -377,6 +378,19 @@ export class TrendsFast {
       },
       options,
     );
+  }
+
+  // ---- The video outlier check (paid; reads the creator's account) -----------------------
+
+  /** Video outlier check (5 credits, charged only when the video is found): one TikTok,
+   * Instagram or YouTube video against its creator's recent posts, with Virlo's outlier score
+   * in `data.video_outlier`. A TikTok link names its creator; an Instagram or YouTube link needs
+   * `handle`. A link TrendsFast cannot read is refused before anything is charged. */
+  async outlier(url: string, options: OutlierOptions = {}): Promise<TrendsResult> {
+    const link = requireText(url, "The video URL", 1, 500);
+    const handle =
+      options.handle === undefined ? undefined : requireText(options.handle, "The handle", 1, 100);
+    return this.query("outlier", { url: link, ...(handle ? { handle } : {}) }, options);
   }
 
   /**

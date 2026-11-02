@@ -8,7 +8,8 @@
     "global",
     "niche",
     "ask",
-    "discover"
+    "discover",
+    "outlier"
   ],
   "products": [
     {
@@ -56,13 +57,15 @@
     "global": 1,
     "niche": 3,
     "ask": 5,
-    "discover": 5
+    "discover": 5,
+    "outlier": 5
   },
   "paths": {
     "global": "/v3/trends/global",
     "niche": "/v3/trends/niche",
     "ask": "/v3/trends/ask",
     "discover": "/v3/trends/discover",
+    "outlier": "/v3/trends/outlier",
     "result": "/v3/trends/results/{id}",
     "request": "/v3/trends/requests/{id}",
     "wallet": "/v3/trends/wallet",

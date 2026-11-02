@@ -1,5 +1,5 @@
 /**
- * The paid commands: the five products and the cheaper index reads.
+ * The paid commands: the five products, the cheaper index reads and the video outlier check.
  *
  * Every one follows the same contract. The free quote is printed to stderr first. Without a
  * terminal (an agent or a script) the command needs `--max-credits` at or above the quote,
@@ -106,6 +106,11 @@ export const DISCOVER_FLAGS: FlagSpec[] = [
   { name: "scope", type: "list", value: "<list>", help: `Rings to read: ${DISCOVER_SCOPES.join(", ")} (default all)` },
   { name: "channels", type: "list", value: "<list>", help: `Channels: ${DISCOVER_CHANNELS.join(", ")} (default all)` },
   ...ASK_FLAGS,
+];
+export const OUTLIER_FLAGS: FlagSpec[] = [
+  { name: "handle", type: "string", value: "<handle>", help: "The creator's handle; an Instagram or YouTube link needs it" },
+  ...CALL_FLAGS,
+  ...OUTPUT_FLAGS,
 ];
 
 function oneOf(values: readonly string[], given: string[], flag: string, upper = true): string[] {
@@ -247,6 +252,13 @@ export function readPlan(operation: Exclude<Operation, never>, positionals: stri
         const f = filters();
         return { question: text, ...(await scope(client)), ...(f ? { filters: f } : {}), ...ringFlags(flags) };
       });
+    case "outlier": {
+      if (positionals.length !== 1 || !text)
+        throw new UsageError("Give one video link: trendsfast outlier <tiktok|instagram|youtube-url> [--handle <handle>]");
+      const handle = typeof flags.handle === "string" ? flags.handle.trim() : undefined;
+      if (handle === "") throw new UsageError("--handle needs the creator's handle, e.g. --handle @creator");
+      return { ...plan(async () => ({ url: text, ...(handle ? { handle } : {}) })), label: "video outlier check" };
+    }
     case "discover":
       if (text && text.length < 3) throw new UsageError("A discover question needs at least 3 characters.");
       return plan(async (client) => {

@@ -100,7 +100,7 @@ class CatalogTest(unittest.TestCase):
             [(p["id"], p["command"], p["credits"]) for p in trendsfast.PRODUCTS],
             [("customers", "customers", 10), ("niche", "trending", 25), ("competitors", "competitors", 30), ("formats", "formats", 20), ("search", "search", 35)],
         )
-        self.assertEqual(trendsfast.READ_CREDITS, {"global": 1, "niche": 3, "ask": 5, "discover": 5})
+        self.assertEqual(trendsfast.READ_CREDITS, {"global": 1, "niche": 3, "ask": 5, "discover": 5, "outlier": 5})
         pyproject = (Path(__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn('version = "%s"' % trendsfast.__version__, pyproject)
         self.assertIn("dependencies = []", pyproject)
@@ -191,6 +191,22 @@ class ProductTest(ApiTestCase):
                 ("/v3/trends/discover", 5, {"question": "What is rising?", "scope": ["global"], "channels": ["video"]}),
             ],
         )
+
+    def test_the_video_outlier_check_sends_the_link_and_the_handle_instagram_needs(self):
+        api, tf = self.serve(lambda call, i: (200, result_for(call, "outlier-result.json")))
+        result = tf.outlier("https://www.instagram.com/reel/C0deExample/", handle="creator")
+        tf.outlier("https://www.tiktok.com/@creator/video/7300000000000000000", max_credits=5)
+        self.assertEqual(
+            [(c["path"], c["body"]["max_credits"], c["body"]["input"]) for c in api.calls],
+            [
+                ("/v3/trends/outlier", 5, {"url": "https://www.instagram.com/reel/C0deExample/", "handle": "creator"}),
+                ("/v3/trends/outlier", 5, {"url": "https://www.tiktok.com/@creator/video/7300000000000000000"}),
+            ],
+        )
+        self.assertEqual(result["operation"], "outlier")
+        self.assertEqual(result["data"]["video_outlier"]["status"], "FOUND")
+        with self.assertRaises(TypeError):
+            tf.outlier("https://www.tiktok.com/@creator/video/7300000000000000000", context_id=CONTEXT_ID)
 
 
 class ReadTest(ApiTestCase):

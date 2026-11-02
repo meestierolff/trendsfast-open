@@ -36,6 +36,7 @@ export const ENDPOINTS = {
 	niche: { method: 'POST', path: '/v3/trends/niche', scope: 'trends:query', paid: true },
 	global: { method: 'POST', path: '/v3/trends/global', scope: 'trends:query', paid: true },
 	ask: { method: 'POST', path: '/v3/trends/ask', scope: 'trends:query', paid: true },
+	outlier: { method: 'POST', path: '/v3/trends/outlier', scope: 'trends:query', paid: true },
 	quote: { method: 'GET', path: '/v3/trends/quote', scope: 'credits:read', paid: false },
 	result: { method: 'GET', path: '/v3/trends/results/{id}', scope: 'trends:read', paid: false },
 	request: { method: 'GET', path: '/v3/trends/requests/{id}', scope: 'trends:read', paid: false },
@@ -114,6 +115,12 @@ export const NICHE_READ_CREDITS = 3;
 export const GLOBAL_TRENDS_CREDITS = 1;
 
 export const ASK_CREDITS = 5;
+
+/**
+ * The video outlier check: one video against its creator's recent posts. Charged only when the
+ * video is found among them with a view count; otherwise it costs nothing.
+ */
+export const OUTLIER_CREDITS = 5;
 
 /** "Customers 10, Trending 25, …" for operation descriptions. */
 export const PRODUCT_PRICE_LIST = PRODUCTS.map(

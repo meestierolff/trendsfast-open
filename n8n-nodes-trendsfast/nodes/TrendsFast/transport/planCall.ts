@@ -10,6 +10,7 @@ import {
 	MAX_CREDITS_CEILING,
 	NICHE_READ_CREDITS,
 	NICHE_TERM_FIELDS,
+	OUTLIER_CREDITS,
 	PAID_TIMEOUT_MS,
 	PLATFORM_CHOICES,
 	READ_TIMEOUT_MS,
@@ -327,6 +328,22 @@ export function planCall(resource: string, operation: string, read: ReadParamete
 				path: ENDPOINTS.ask.path,
 				charge: {
 					maxCredits: maxCredits(read('maxCredits', ASK_CREDITS), ASK_CREDITS),
+					suppliedRequestId: asText(read('requestId', '')),
+					input,
+				},
+			};
+		}
+		case 'video.checkOutlier': {
+			const input: IDataObject = { url: boundedText(read('url', ''), 'Video URL', 1, 500) };
+			const handle = asText(read('handle', ''));
+			if (handle) input.handle = boundedText(handle, 'Handle', 1, 100);
+			return {
+				key,
+				label: 'the video outlier check',
+				endpoint: ENDPOINTS.outlier,
+				path: ENDPOINTS.outlier.path,
+				charge: {
+					maxCredits: maxCredits(read('maxCredits', OUTLIER_CREDITS), OUTLIER_CREDITS),
 					suppliedRequestId: asText(read('requestId', '')),
 					input,
 				},
