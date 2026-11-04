@@ -2,7 +2,7 @@
   "name": "trendsfast-open",
   "version": "0.0.0",
   "private": true,
-  "description": "The public TrendsFast agent kit: the trendsfast skill, a Claude Code plugin and an n8n community node.",
+  "description": "The public TrendsFast agent kit: the CLI, the SDKs, the trendsfast skill, an agent plugin and an n8n community node.",
   "license": "MIT",
   "scripts": {
     "boundary": "node scripts/check-boundary.mjs",

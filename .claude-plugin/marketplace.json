@@ -1,12 +1,14 @@
 {
   "name": "trendsfast",
-  "description": "TrendsFast for Claude Code: one market-evidence skill, loaded only when a task needs it, and the remote MCP server in one plugin.",
-  "owner": { "name": "TrendsFast" },
+  "description": "TrendsFast for Claude Code: one market-evidence skill, loaded only when a task needs it, and the hosted MCP server, signed in through your browser.",
+  "owner": {
+    "name": "TrendsFast"
+  },
   "plugins": [
     {
       "name": "trendsfast",
-      "source": "./",
-      "description": "Sourced market evidence for a brand: customers, niche trends, competitors, video formats and AI-search answers, as one skill and the remote MCP server."
+      "source": "./plugins/trendsfast",
+      "description": "Sourced market evidence for a brand: customers, niche trends, competitors, video formats and AI-search answers, as one skill and the hosted MCP server."
     }
   ]
 }

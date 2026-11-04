@@ -20,8 +20,8 @@
 </p>
 
 <p align="center">
-  Works with Claude · ChatGPT · Claude Code · Codex · Cursor · Windsurf · Gemini CLI · OpenCode
-  · OpenClaw · n8n
+  Works with Claude · ChatGPT · Grok · Grok Bot · Claude Code · Codex · Cursor · VS Code
+  · Windsurf · Gemini CLI · OpenCode · OpenClaw · n8n
 </p>
 
 **TrendsFast gives AI agents sourced market evidence.** Your agent asks what a brand's
@@ -35,7 +35,7 @@ This repository is the open-source half of TrendsFast, under the MIT license:
 - the CLI;
 - the SDKs for Node and Python;
 - the agent skill;
-- a Claude Code plugin;
+- a plugin for Cursor, Grok Bot, Claude and Grok Build;
 - an n8n node.
 
 The trend index and the API run at [trendsfast.com](https://trendsfast.com).
@@ -181,14 +181,14 @@ Standard library only. See [python/README.md](python/README.md).
 </details>
 
 <details>
-<summary><b>Skill only, Claude Code plugin, ClawHub</b></summary>
+<summary><b>Skill only, plugin, ClawHub</b></summary>
 
 ```bash
 npx skills add meestierolff/trendsfast-open --skill trendsfast   # any agent that reads SKILL.md
 ```
 
 ```text
-/plugin marketplace add meestierolff/trendsfast-open             # Claude Code: skill + MCP server
+/plugin marketplace add meestierolff/trendsfast-open             # Claude Code: skill + hosted server
 /plugin install trendsfast@trendsfast
 ```
 
@@ -226,14 +226,14 @@ the docs are at [trendsfast.com/docs](https://trendsfast.com/docs).
 
 ## What is in this repository
 
-| Path                                            | What                                         | Published as               |
-| ----------------------------------------------- | -------------------------------------------- | -------------------------- |
-| [`cli/`](cli)                                   | The `trendsfast` command                     | npm `trendsfast-cli`       |
-| [`sdk-js/`](sdk-js)                             | The Node SDK                                 | npm `trendsfast`           |
-| [`python/`](python)                             | The Python SDK                               | PyPI `trendsfast`          |
-| [`skills/trendsfast/`](skills/trendsfast)       | The agent skill, a router with references    | skills.sh, ClawHub         |
-| [`.claude-plugin/`](.claude-plugin)             | The Claude Code plugin: skill and MCP server | `/plugin marketplace add`  |
-| [`n8n-nodes-trendsfast/`](n8n-nodes-trendsfast) | The n8n node with example workflows          | npm `n8n-nodes-trendsfast` |
+| Path                                            | What                                      | Published as               |
+| ----------------------------------------------- | ----------------------------------------- | -------------------------- |
+| [`cli/`](cli)                                   | The `trendsfast` command                  | npm `trendsfast-cli`       |
+| [`sdk-js/`](sdk-js)                             | The Node SDK                              | npm `trendsfast`           |
+| [`python/`](python)                             | The Python SDK                            | PyPI `trendsfast`          |
+| [`skills/trendsfast/`](skills/trendsfast)       | The agent skill, a router with references | skills.sh, ClawHub         |
+| [`plugins/trendsfast/`](plugins/trendsfast)     | The agent plugin: skill and hosted server | `/plugin marketplace add`  |
+| [`n8n-nodes-trendsfast/`](n8n-nodes-trendsfast) | The n8n node with example workflows       | npm `n8n-nodes-trendsfast` |
 
 ## Open kit and hosted service
 

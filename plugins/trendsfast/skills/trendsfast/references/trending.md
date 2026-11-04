@@ -1,0 +1,36 @@
+# Trending
+
+Posts, videos and searches gaining attention in the brand's niche, then in the niches next to
+it, collected fresh from TikTok, YouTube, Instagram, Facebook, X, Reddit, Hacker News and Google
+Trends when the call runs. Product `niche` (the API's name for Trending), 25 credits.
+
+## Run
+
+`trendsfast_niche_trends` with these arguments:
+
+```json
+{"request_id": "<new uuid>", "max_credits": 25, "input": {"product": "niche", "context_id": "<context_id>"}}
+```
+
+Only the whole index, without a brand? `trendsfast_global_trends` (1 credit) is cheaper.
+
+## Read the result
+
+- Each item: title, platform, observed time, measured signal (views, likes, score, relative
+  interest), link, and whether it is in the core niche or next door (`ring`).
+- `topic_history`: EMERGING, RISING, PEAKING, DECLINING or EVERGREEN, since when and on how many
+  channels. It is the only basis for saying a topic is rising; without it, say what was
+  measured, not where it is heading.
+- `performance`: a short video's `view_band` against its own platform (never compare
+  raw views across platforms) and its `engagement_rate` (over 5% resonance, under 1% passive).
+  Where a follower count came with the post, `performance.virality` is the Virality Score,
+  ln(views ÷ followers) × ln(followers): rank by it, not by raw views (18 or more is strong, 35
+  or more exceptional).
+- `communities`: the brand's communities' rules and play; read them before drafting a post.
+- `brief` and `coverage`: what each item is good for, and what was not collected.
+
+**Done when:** each trend you report has a source link, an observed time and a measured
+signal, rising claims come from `topic_history`, and coverage gaps are stated.
+
+Next: [formats.md](formats.md) for the videos that work, [content-plan.md](content-plan.md) for
+a week of posts.

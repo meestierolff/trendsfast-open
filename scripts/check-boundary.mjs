@@ -17,12 +17,14 @@ const failures = [];
 
 const allowedRoots = [
   ".claude-plugin/",
+  ".cursor-plugin/",
   ".github/workflows/",
   "assets/",
   "cli/",
   "config/",
   "docs/",
   "n8n-nodes-trendsfast/",
+  "plugins/",
   "python/",
   "scripts/",
   "sdk-js/",

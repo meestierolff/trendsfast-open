@@ -10,7 +10,7 @@ historical implementation.
   through the browser, and the `trendsfast` SDKs for Node (`sdk-js/`) and Python (`python/`),
   added on 2026-10-31;
 - the credential-free `trendsfast` agent skill for the V3 API and MCP server;
-- a Claude Code plugin and marketplace that connect the remote MCP server;
+- an agent plugin and marketplaces that connect the remote MCP server;
 - `n8n-nodes-trendsfast`, an n8n community node over the public V3 REST API, with
   example workflows;
 - synthetic fixtures and tests; and
