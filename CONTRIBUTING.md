@@ -6,7 +6,7 @@ clients of the TrendsFast API:
 - the CLI;
 - the SDKs for Node and Python;
 - the agent skill;
-- the Claude Code plugin;
+- the agent plugin;
 - the n8n node.
 
 The API, the trend index and the website are a hosted service and are not in this repository.

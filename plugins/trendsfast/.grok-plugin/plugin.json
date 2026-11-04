@@ -1,0 +1,14 @@
+{
+  "name": "trendsfast",
+  "version": "1.0.0",
+  "description": "Sourced market evidence for your brand: what its customers ask, what is trending in its niche, what competitors post, which video formats and hooks work, and what AI assistants answer. Sign in with your TrendsFast account; every call states its price.",
+  "author": {
+    "name": "TrendsFast",
+    "url": "https://trendsfast.com"
+  },
+  "homepage": "https://trendsfast.com/agents",
+  "repository": "https://github.com/meestierolff/trendsfast-open",
+  "license": "MIT",
+  "keywords": ["trendsfast", "trendsfast mcp", "trendsfast trends"],
+  "logo": "assets/logo.svg"
+}

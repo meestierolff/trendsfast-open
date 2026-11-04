@@ -1,0 +1,16 @@
+{
+  "name": "trendsfast",
+  "owner": {
+    "name": "TrendsFast"
+  },
+  "metadata": {
+    "description": "TrendsFast for Cursor and Grok Bot: sourced market evidence for your brand."
+  },
+  "plugins": [
+    {
+      "name": "trendsfast",
+      "source": "plugins/trendsfast",
+      "description": "Sourced market evidence for your brand: what its customers ask, what is trending in its niche, what competitors post, which video formats and hooks work, and what AI assistants answer. Sign in with your TrendsFast account; every call states its price."
+    }
+  ]
+}

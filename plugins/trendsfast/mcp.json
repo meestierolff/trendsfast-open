@@ -3,7 +3,7 @@
   "mcpServers": {
     "trendsfast": {
       "type": "streamable-http",
-      "url": "https://trendsfast.com/api/mcp/v3"
+      "url": "https://trendsfast.com/api/mcp/v3/oauth"
     }
   }
 }

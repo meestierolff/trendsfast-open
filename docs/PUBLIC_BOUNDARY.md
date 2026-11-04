@@ -6,7 +6,7 @@ This repository holds the public TrendsFast agent kit. Its parts:
 
 - the `trendsfast` CLI (`cli/`) and the `trendsfast` SDKs for Node (`sdk-js/`) and Python (`python/`);
 - the `trendsfast` agent skill;
-- a Claude Code plugin that connects the remote MCP server;
+- an agent plugin that connects the remote MCP server;
 - `n8n-nodes-trendsfast`, an n8n community node for the V3 REST API.
 
 The remote service remains the only application, entitlement, idempotency, cost-admission, research, ranking and generation boundary.
