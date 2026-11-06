@@ -170,7 +170,7 @@ The tests run on Node's built-in runner against the built `dist/` and never open
 - `test/execute.test.mjs`: `execute()` end to end, covering output as-is, one request per item, request IDs, error messages and items for 308, 402, 409, 429, 503 and lost responses, and that the API key never appears in an error.
 - `test/examples.test.mjs`: both example workflows, covering structure, valid TrendsFast parameters, the requests they build, and their Code nodes run against a fixture.
 
-`test/fixtures/openapi-v3.json` is the V3 OpenAPI document generated from TrendsFast commit `d8fb8f48` (SHA-256 `8826d353…52d04d7f`); `test/fixtures/customers-result.json` is a synthetic result that the tests validate against it.
+`test/fixtures/openapi-v3.json` is the V3 OpenAPI document generated on 2026-11-05 from the TrendsFast change that added community profiles and the compact view (SHA-256 `148739f6…ad60219e`); `test/fixtures/customers-result.json` is a synthetic result that the tests validate against it.
 
 **Why this node is programmatic.** n8n recommends declarative routing for REST APIs ([n8n: choose a node style](https://docs.n8n.io/integrations/creating-nodes/plan/choose-node-method/)). This node uses `execute()` because of the request ID rule: when no answer arrives, the workflow must still learn the request ID to recover or retry without paying twice. Declarative routing hands a transport failure straight to n8n's error handling with no hook to attach that ID. Each call is still one plain authenticated request, built by `nodes/TrendsFast/transport/planCall.ts` and sent with n8n's `httpRequestWithAuthentication`.
 

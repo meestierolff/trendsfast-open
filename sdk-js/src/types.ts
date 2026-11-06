@@ -262,7 +262,7 @@ export interface TopicHistory {
   series_method_version: string;
 }
 
-/** How a post performed by Virlo's published math; a part is null when an input was not observed. */
+/** How a post performed against its audience; a part is null when an input was not observed. */
 export interface Performance {
   method_version: "virality-v1";
   /** A competitor account's post against the median views of that account's posts in the read. */
@@ -291,7 +291,7 @@ export interface Performance {
     times_median: number;
     basis: string;
   } | null;
-  /** Views against the follower count shown with the post: Virlo's Virality Score. */
+  /** Views against the follower count shown with the post: the Virality Score. */
   virality?: {
     followers: number;
     score: number;
@@ -300,7 +300,7 @@ export interface Performance {
     multiple: "MEGA_OUTLIER" | "EXCEPTIONAL" | "NOTABLE" | null;
     basis: string;
   } | null;
-  /** A competitor account's average views against its followers: Virlo's creator outlier. */
+  /** A competitor account's average views against its followers: the creator outlier. */
   creator?: {
     account: string;
     followers: number;
@@ -315,6 +315,10 @@ export interface Performance {
 export interface IntelligenceItem {
   id: string;
   cluster_id: string;
+  /** The post's own permalink; null where the source has none. */
+  url?: string | null;
+  /** When the post was published; null where the source does not say. */
+  published_at?: string | null;
   entity: Entity;
   content_type: ContentType;
   current_observation: Observation;
@@ -435,19 +439,33 @@ export interface Intelligence {
   brief?: Brief;
   ai_answers?: { provider: string; asked: number; answers: AiAnswer[]; limitations: string[] };
   communities?: CommunityProfile[];
-  /** Hook types among the result's videos with Virlo's strong-hit rate, highest first. */
+  /** Hook types among the result's videos with their strong-hit rate, highest first. */
   hook_types?: {
     type: string;
     videos: number;
+    /** Distinct accounts using the hook; absent from results saved before it was counted. */
+    accounts?: number;
     scored: number;
     strong: number;
     strong_hit_rate: number | null;
+  }[];
+  /** Formats as the platforms name them (SLIDESHOW, SHORT, LONG_FORM), highest strong-hit
+   * rate first, with the accounts that post each and its lift over the result's videos. */
+  formats?: {
+    format: "SLIDESHOW" | "SHORT" | "LONG_FORM";
+    videos: number;
+    accounts: number;
+    scored: number;
+    strong: number;
+    strong_hit_rate: number | null;
+    lift: number | null;
+    median_duration_seconds: number | null;
   }[];
   /** A video outlier check's answer; absent from every other result. */
   video_outlier?: VideoOutlier;
 }
 
-/** Virlo's video outlier check: the video's views against the median views of its creator's
+/** The video outlier check: the video's views against the median views of its creator's
  * posts in one read of the account, the video included. Every score is null unless FOUND. */
 export interface VideoOutlier {
   method_version: "virality-v1";

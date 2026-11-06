@@ -121,7 +121,7 @@
           "video": {
             "duration_seconds": 31,
             "format": {
-              "value": "Talking head with on-screen list",
+              "value": "SHORT",
               "basis": "METADATA",
               "evidence_ids": [
                 "observation_invoice_video"
@@ -280,7 +280,29 @@
       "next_steps": [
         "Read each community's rules before drafting a post."
       ]
-    }
+    },
+    "hook_types": [
+      {
+        "type": "NEGATION",
+        "videos": 1,
+        "accounts": 1,
+        "scored": 0,
+        "strong": 0,
+        "strong_hit_rate": null
+      }
+    ],
+    "formats": [
+      {
+        "format": "SHORT",
+        "videos": 1,
+        "accounts": 1,
+        "scored": 0,
+        "strong": 0,
+        "strong_hit_rate": null,
+        "lift": null,
+        "median_duration_seconds": 31
+      }
+    ]
   },
   "usage": {
     "credits_charged": 25,

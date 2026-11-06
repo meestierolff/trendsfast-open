@@ -299,6 +299,22 @@ class ErrorTest(ApiTestCase):
         self.assertEqual(self.waits, [2.0, 2.0, 2.0])
         self.assertEqual(len({c["body"]["request_id"] for c in api.calls}), 1)
 
+    def test_a_concurrency_refusal_is_sent_again_once_a_slot_frees(self):
+        refused = {"error": "CONCURRENT_LIMIT", "retryable": True, "charged_credits": 0}
+        api, tf = self.serve(
+            lambda call, i: (429, refused, {"Retry-After": "20"}) if i == 0 else (200, result_for(call, "global-result.json"))
+        )
+        tf.global_trends()
+        self.assertEqual(len(api.calls), 2)
+        self.assertEqual(self.waits, [20.0])
+        self.assertEqual(len({c["body"]["request_id"] for c in api.calls}), 1)
+
+    def test_a_concurrency_refusal_says_nothing_was_charged(self):
+        error = trendsfast.errors.error_from_response(429, {"error": "CONCURRENT_LIMIT"})
+        self.assertIsInstance(error, trendsfast.RateLimitedError)
+        self.assertTrue(error.retryable)
+        self.assertIn("Nothing was started or charged", str(error))
+
 
 class LostAnswerTest(ApiTestCase):
     def test_a_dropped_answer_is_retried_with_the_same_id_then_read_back_once(self):

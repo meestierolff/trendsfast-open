@@ -47,7 +47,7 @@ A free account comes with monthly credits. See [pricing](https://trendsfast.com/
 | `trendsfast_project_context`               | Your confirmed brand                                                                                                        | Free             |
 | `trendsfast_credit_balance`                | Your balance                                                                                                                | Free             |
 | `trendsfast_read_result`                   | Reread a saved result                                                                                                       | Free             |
-| `trendsfast_community_brief`               | One subreddit read in depth: its people, how to sound, the winning post and reply, its rules                                | Free             |
+| `trendsfast_community_brief`               | Read before drafting for a subreddit, free: its people, how to sound, the winning post and reply, its rules                 | Free             |
 
 Each paid call carries a credit cap and a request ID, so a retry never charges twice. An empty
 result costs nothing.

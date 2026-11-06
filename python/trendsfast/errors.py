@@ -135,6 +135,7 @@ _MESSAGES = {
     "PRODUCT_REQUIRES_CONTEXT": "A product runs on your brand's confirmed context; read a niche you describe without one.",
     "RESULT_UNAVAILABLE": "The result is no longer available. Do not rebuild it from memory.",
     "RATE_LIMITED": "TrendsFast is limiting how fast this account can send calls. Nothing was started.",
+    "CONCURRENT_LIMIT": "Too many calls are running on this account at once. Nothing was started or charged; wait, then send the same call again.",
     "REQUEST_OUTCOME_UNCONFIRMED": "TrendsFast could not confirm the outcome. Read it by its request ID before sending anything new.",
     "REQUEST_IN_PROGRESS": "An earlier call with this request ID is still running. Read it again later.",
     "EFFECT_UNKNOWN": "TrendsFast does not know whether this call completed. Read it again later; never resend it under a new ID.",
