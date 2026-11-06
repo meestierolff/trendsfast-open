@@ -27,6 +27,10 @@ for (const item of result.data.version === "trend-intelligence-v3" ? result.data
 console.log(result.result_id, result.usage.credits_charged);
 ```
 
+`usage.credits_charged` is what the request was charged when it ran, the same on every reread;
+`usage.this_request_credits` is what this call charged, 0 when a saved request is replayed, and
+is also sent as the `X-Credits-Charged` header. There is no `credits_used` field.
+
 Get a key by signing in with the CLI (`npx -y trendsfast-cli@latest login`) or at
 https://trendsfast.com/dashboard/api-keys. A verified account gets 100 free credits once.
 

@@ -181,6 +181,8 @@ const MESSAGES: Readonly<Record<string, string>> = {
   RESULT_UNAVAILABLE:
     "The result is no longer available: it expired, its brand context changed or its evidence was removed. Do not rebuild it from memory.",
   RATE_LIMITED: "TrendsFast is limiting how fast this account can send calls. Nothing was started.",
+  CONCURRENT_LIMIT:
+    "Too many calls are running on this account at once. Nothing was started or charged; wait, then send the same call again.",
   REQUEST_OUTCOME_UNCONFIRMED:
     "TrendsFast could not confirm the outcome. The call may have run: read it by its request ID before sending anything new.",
   REQUEST_IN_PROGRESS:

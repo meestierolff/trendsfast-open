@@ -214,6 +214,25 @@ describe("errors", () => {
     assert.equal(new Set(calls.map((c) => c.body.request_id)).size, 1, "every attempt carries the same request ID");
   });
 
+  it("sends a call refused for concurrency again once a slot frees, under the same request ID", async () => {
+    const waits = [];
+    const refused = { error: "CONCURRENT_LIMIT", retryable: true, charged_credits: 0 };
+    const { fetch, calls } = fakeFetch((call, index) =>
+      index === 0 ? json(refused, 429, { "retry-after": "20" }) : json(resultFor(call, "global-result.json")),
+    );
+    await client(fetch, { sleep: async (ms) => void waits.push(ms) }).globalTrends();
+    assert.equal(calls.length, 2, "the refused attempt and one retry");
+    assert.deepEqual(waits, [20_000]);
+    assert.equal(new Set(calls.map((c) => c.body.request_id)).size, 1);
+  });
+
+  it("says a concurrency refusal charged nothing", () => {
+    const error = sdk.errorFromResponse(429, { error: "CONCURRENT_LIMIT" });
+    assert.ok(error instanceof sdk.RateLimitedError);
+    assert.equal(error.retryable, true);
+    assert.match(error.message, /Nothing was started or charged/);
+  });
+
   it("does not wait out a Retry-After longer than its limit", async () => {
     const { fetch, calls } = fakeFetch(() => json({ error: "RATE_LIMITED" }, 429, { "retry-after": "3600" }));
     await assert.rejects(client(fetch).globalTrends(), sdk.RateLimitedError);

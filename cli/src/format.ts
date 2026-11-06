@@ -132,7 +132,7 @@ export function formatResult(compact: CompactResult, label: string): string {
       OBSERVATIONS_AVAILABLE: "observed",
       COLLECTED_EMPTY: "collected, empty",
       OUTCOME_UNKNOWN: "outcome unknown",
-      NOT_COLLECTED: "not collected",
+      NOT_COLLECTED: "nothing in scope",
       RIGHTS_UNAVAILABLE: "not permitted",
     };
     lines.push(

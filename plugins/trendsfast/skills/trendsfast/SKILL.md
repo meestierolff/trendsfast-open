@@ -42,8 +42,9 @@ Cheaper reads collect nothing new:
 - `trendsfast_ask_trends` (5 credits): one question.
 - `trendsfast_discover_trends` (5 credits): every scope and channel.
 - Free: `trendsfast_project_context`, `trendsfast_credit_balance`, `trendsfast_read_result`.
-- Free: `trendsfast_community_brief`, one subreddit read in depth; read it before drafting for
-  that community. Without a name, it lists the briefs.
+- Free, and the first call before any Reddit draft: `trendsfast_community_brief`, one
+  subreddit read in depth: its rules, its people and what wins there. No paid call is needed
+  first. Without a name, it lists the briefs; an unknown name answers with the closest held.
 
 A video vs. its creator's posts: `trendsfast_video_outlier` (5 credits, only if found).
 

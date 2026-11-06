@@ -315,6 +315,10 @@ export interface Performance {
 export interface IntelligenceItem {
   id: string;
   cluster_id: string;
+  /** The post's own permalink; null where the source has none. */
+  url?: string | null;
+  /** When the post was published; null where the source does not say. */
+  published_at?: string | null;
   entity: Entity;
   content_type: ContentType;
   current_observation: Observation;
@@ -439,9 +443,23 @@ export interface Intelligence {
   hook_types?: {
     type: string;
     videos: number;
+    /** Distinct accounts using the hook; absent from results saved before it was counted. */
+    accounts?: number;
     scored: number;
     strong: number;
     strong_hit_rate: number | null;
+  }[];
+  /** Formats as the platforms name them (SLIDESHOW, SHORT, LONG_FORM), highest strong-hit
+   * rate first, with the accounts that post each and its lift over the result's videos. */
+  formats?: {
+    format: "SLIDESHOW" | "SHORT" | "LONG_FORM";
+    videos: number;
+    accounts: number;
+    scored: number;
+    strong: number;
+    strong_hit_rate: number | null;
+    lift: number | null;
+    median_duration_seconds: number | null;
   }[];
   /** A video outlier check's answer; absent from every other result. */
   video_outlier?: VideoOutlier;
