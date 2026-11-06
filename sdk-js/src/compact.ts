@@ -92,7 +92,7 @@ export interface CompactAnswer {
   next_steps: string[];
 }
 
-/** A video outlier check's answer, with Virlo's field names; every score is null unless FOUND. */
+/** A video outlier check's answer; every score is null unless FOUND. */
 export interface CompactVideoOutlier {
   status: "FOUND" | "NOT_FOUND" | "NO_BASELINE";
   video: { platform: string; url: string; views: number | null; published_at: string | null };
