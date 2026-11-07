@@ -102,6 +102,20 @@ const EDITS = {
       "`trendsfast_niche_trends` calls, with `product` `customers`, `competitors` and `search`. They can\nrun in parallel, each with its own request ID. On `REQUEST_OUTCOME_UNCONFIRMED` read it back with\n`trendsfast_read_result`; never re-run under a new ID.",
     ],
   ],
+  "loop.md": [
+    [
+      "Open `trendsfast-loop.jsonl` in the project, or the notes you keep for this user.",
+      "Open the log: a project document called Loop log, or wherever you keep notes for this user.",
+    ],
+    [
+      "`trendsfast history` and `trendsfast result <id>` (both free) reread last week's result instead\nof paying for it again.",
+      "`trendsfast_read_result` (free) rereads last week's result instead of paying for it again.",
+    ],
+    [
+      "`trendsfast outlier <url> --max-credits 5`, charged only when the\n  video is found.",
+      "`trendsfast_video_outlier` (5 credits), charged only when the\n  video is found.",
+    ],
+  ],
   "errors.md": [
     [
       "The CLI exits with one code per kind of failure. Over MCP and REST the same code arrives as\n`error` in the response.",
