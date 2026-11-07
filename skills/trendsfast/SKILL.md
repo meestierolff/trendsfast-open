@@ -11,8 +11,7 @@ metadata: {"openclaw": {"requires": {"env": ["TRENDSFAST_API_KEY"], "anyBins": [
 
 ## When to use it
 
-When market evidence improves the work: content, launches, positioning, SEO.
-Skip it otherwise; respect the user's choice of sources.
+When market evidence improves the work: content, launches, positioning, SEO. Skip it otherwise.
 
 ## Connect
 
@@ -38,7 +37,8 @@ Read the reference first.
 | Search demand and AI answers | Search | `trendsfast search --max-credits 35` | `product: "search"` | 35 | [→](references/search.md) |
 
 Several apply? Top down. A week of posts: [content-plan.md](references/content-plan.md), 55
-credits; a one-page decision brief: [market-brief.md](references/market-brief.md), up to 75.
+credits; a decision brief: [market-brief.md](references/market-brief.md), up to 75. Then each
+week: [loop.md](references/loop.md).
 
 Cheaper reads collect nothing new:
 

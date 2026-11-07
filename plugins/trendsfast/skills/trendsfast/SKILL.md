@@ -34,6 +34,7 @@ Read the reference first.
 
 Several apply? Top down. A week of posts: [content-plan.md](references/content-plan.md), 55
 credits; a one-page decision brief: [market-brief.md](references/market-brief.md), up to 75.
+Every week after, run the loop: [loop.md](references/loop.md).
 
 Cheaper reads collect nothing new:
 
