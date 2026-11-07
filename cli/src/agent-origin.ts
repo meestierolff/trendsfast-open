@@ -30,7 +30,7 @@ export function detectAgent(env: Record<string, string | undefined>): string | u
   return undefined;
 }
 
-/** `trendsfast-cli/0.1.2`, or `trendsfast-cli/0.1.2 (+agent: claude-code)`. */
+/** `trendsfast-cli/0.1.3`, or `trendsfast-cli/0.1.3 (+agent: claude-code)`. */
 export function userAgent(env: Record<string, string | undefined>): string {
   const agent = detectAgent(env);
   return `trendsfast-cli/${CLI_VERSION}${agent ? ` (+agent: ${agent})` : ""}`;
