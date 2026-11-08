@@ -1,5 +1,6 @@
 /** Files the CLI writes for an agent to read in bounded slices instead of in its context. */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { closeSync, lstatSync, mkdirSync, openSync, renameSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 export const OUTPUT_DIRECTORY = ".trendsfast";
@@ -8,11 +9,50 @@ export const OUTPUT_DIRECTORY = ".trendsfast";
  * committed even where the project's own .gitignore does not mention the directory. */
 export function ensureOutputDirectory(cwd: string): string {
   const directory = join(cwd, OUTPUT_DIRECTORY);
-  mkdirSync(directory, { recursive: true });
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  // A cloned project can commit `.trendsfast` as a link to somewhere else in the home
+  // directory; the CLI writes only into a real directory it can see.
+  if (!lstatSync(directory).isDirectory())
+    throw new Error(`${directory} is not a directory the CLI created (it may be a link); remove it and run again.`);
   const ignore = join(directory, ".gitignore");
-  if (!existsSync(ignore))
-    writeFileSync(ignore, "# Written by the trendsfast CLI: collected posts are third-party text.\n*\n");
+  if (!isRegularFile(ignore))
+    writeFileReplacing(ignore, "# Written by the trendsfast CLI: collected posts are third-party text.\n*\n");
   return directory;
+}
+
+function isRegularFile(path: string): boolean {
+  try {
+    return lstatSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Writes through a new private temp file renamed over the destination, so a link planted at
+ * the destination is replaced, never followed, and a reader never sees half a file. A FIFO
+ * or character device the user named explicitly (such as /dev/stdout) is written directly.
+ */
+export function writeFileReplacing(path: string, text: string): void {
+  try {
+    const existing = lstatSync(path);
+    if (existing.isFIFO() || existing.isCharacterDevice()) return writeFileSync(path, text);
+  } catch {
+    // Nothing there yet.
+  }
+  const temp = join(dirname(path), `.${basename(path)}.${randomBytes(6).toString("hex")}.tmp`);
+  const fd = openSync(temp, "wx", 0o600);
+  try {
+    writeSync(fd, text);
+  } finally {
+    closeSync(fd);
+  }
+  try {
+    renameSync(temp, path);
+  } catch (error) {
+    unlinkSync(temp);
+    throw error;
+  }
 }
 
 /**
@@ -38,5 +78,5 @@ export function generatedName(label: string, id: string, now: Date): string {
 }
 
 export function writeJsonFile(path: string, value: unknown): void {
-  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+  writeFileReplacing(path, `${JSON.stringify(value, null, 2)}\n`);
 }

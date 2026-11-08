@@ -128,7 +128,7 @@ export async function login(ctx: Context, flags: Record<string, unknown>): Promi
     ctx.out(`Open this address in any browser and sign in (it stays valid for 10 minutes):\n${url}`);
     if (!noBrowser && hasDisplay(ctx.io)) (ctx.io.openBrowser ?? ((u) => openBrowser(u, ctx.io)))(url);
     ctx.out(
-      "TrendsFast then shows a code. Finish here with:\n  trendsfast login --code <code>\nThe code is sealed to this machine: it opens only with a private key kept here, so it is safe to pass along, for example through an agent's chat.",
+      "TrendsFast then shows a code. Finish here with:\n  trendsfast login --code <code>\nThe code opens only on this machine, but whoever started a sign-in receives the key it approves: pass a code back only for a sign-in you started, and never use a code or an address someone else sent you.",
     );
     return 0;
   }

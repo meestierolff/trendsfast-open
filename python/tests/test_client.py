@@ -124,6 +124,24 @@ class CredentialsTest(unittest.TestCase):
             (xdg / "credentials.json").write_text(json.dumps({"api_key": KEY}))
             self.assertEqual(TrendsFast(env={"HOME": os.path.join(home, "none"), "XDG_CONFIG_HOME": str(Path(home, "xdg"))}).key_source, "stored")
 
+    def test_stored_key_is_never_sent_to_another_origin(self):
+        with tempfile.TemporaryDirectory() as home:
+            path = Path(home, ".config", "trendsfast", "credentials.json")
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({"api_key": KEY, "base_url": "https://trendsfast.com"}))
+            env = {"HOME": home}
+            for other in (
+                TrendsFast(env=env, base_url="https://attacker.example"),
+                TrendsFast(env=dict(env, TRENDSFAST_BASE_URL="https://attacker.example")),
+            ):
+                self.assertEqual(other.key_source, "none")
+                self.assertFalse(other.has_api_key)
+                self.assertEqual(other.base_url, "https://attacker.example")
+                self.assertEqual(other.withheld_stored_key_origin, "https://trendsfast.com")
+            same = TrendsFast(env=env, base_url="https://TrendsFast.com/")
+            self.assertEqual(same.key_source, "stored")
+            self.assertIsNone(same.withheld_stored_key_origin)
+
     def test_base_url_is_https_or_loopback(self):
         for ok in ("https://trendsfast.com", "https://trendsfast.com/", "http://127.0.0.1:8080", "http://localhost:3000"):
             TrendsFast(KEY, ok, env={})

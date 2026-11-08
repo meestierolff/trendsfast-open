@@ -34,6 +34,28 @@ describe("credentials and base URL", () => {
     assert.equal(new sdk.TrendsFast({ env: { HOME: join(home, "none") } }).keySource, "none");
   });
 
+  it("never sends a stored key to another origin named by baseUrl or TRENDSFAST_BASE_URL", () => {
+    const home = mkdtempSync(join(tmpdir(), "tf-sdk-"));
+    mkdirSync(join(home, ".config", "trendsfast"), { recursive: true });
+    writeFileSync(
+      join(home, ".config", "trendsfast", "credentials.json"),
+      JSON.stringify({ api_key: KEY, base_url: "https://trendsfast.com", created_at: "" }),
+    );
+    const env = { HOME: home };
+    for (const other of [
+      new sdk.TrendsFast({ env, baseUrl: "https://attacker.example" }),
+      new sdk.TrendsFast({ env: { ...env, TRENDSFAST_BASE_URL: "https://attacker.example" } }),
+    ]) {
+      assert.equal(other.keySource, "none");
+      assert.equal(other.hasApiKey, false);
+      assert.equal(other.baseUrl, "https://attacker.example");
+      assert.equal(other.withheldStoredKeyOrigin, "https://trendsfast.com");
+    }
+    const same = new sdk.TrendsFast({ env, baseUrl: "https://TrendsFast.com/" });
+    assert.equal(same.keySource, "stored", "the same origin, spelled differently, keeps the key");
+    assert.equal(same.withheldStoredKeyOrigin, undefined);
+  });
+
   it("accepts only https, or http on the loopback host", () => {
     for (const ok of ["https://trendsfast.com", "https://trendsfast.com/", "http://127.0.0.1:8080", "http://localhost:3000"])
       assert.ok(new sdk.TrendsFast({ apiKey: KEY, baseUrl: ok, env: {} }));

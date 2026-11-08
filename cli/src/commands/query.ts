@@ -37,7 +37,7 @@ import type { TrendsFast } from "../sdk/client.js";
 import { compactResult } from "../sdk/compact.js";
 import { AuthRequiredError, ProductRequiresContextError, TrendsFastError } from "../sdk/errors.js";
 import type { TrendsResult } from "../sdk/types.js";
-import { OUTPUT_FLAGS, failure, outputFormat, printJson, writeOutput } from "./shared.js";
+import { OUTPUT_FLAGS, failure, outputFormat, printJson, withheldKeyNote, writeOutput } from "./shared.js";
 
 export const FILTER_FLAGS: FlagSpec[] = [
   { name: "lookback-hours", type: "number", value: "<1-720>", help: "How far back to read (lookback_hours; server default 72)" },
@@ -291,7 +291,7 @@ export async function runPaid(ctx: Context, plan: Plan, flags: Record<string, un
     if (!client.hasApiKey && !flags["dry-run"])
       throw new AuthRequiredError(
         "AUTH_REQUIRED",
-        "Not signed in. Run `trendsfast login --background` and finish in the browser, or set TRENDSFAST_API_KEY. Nothing was sent.",
+        `Not signed in. Run \`trendsfast login --background\` and finish in the browser, or set TRENDSFAST_API_KEY.${withheldKeyNote(client)} Nothing was sent.`,
         "auth",
       );
     let price = plan.catalogPrice;

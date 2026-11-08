@@ -116,6 +116,15 @@ export function normalizeBaseUrl(value: string): string {
   return url.origin;
 }
 
+/** Whether two base URLs name the same origin. An unparsable one matches nothing. */
+function sameOrigin(left: string, right: string): boolean {
+  try {
+    return normalizeBaseUrl(left) === normalizeBaseUrl(right);
+  } catch {
+    return false;
+  }
+}
+
 function parseRetryAfter(value: string | null): number | undefined {
   if (!value) return undefined;
   const seconds = Number(value);
@@ -182,6 +191,9 @@ function nicheFlags(options: { include_adjacent?: boolean; include_global?: bool
 export class TrendsFast {
   readonly baseUrl: string;
   readonly keySource: KeySource;
+  /** The origin a saved key belongs to, when the key was not loaded because this client
+   * points at a different origin. A saved key is only ever sent to the origin that issued it. */
+  readonly withheldStoredKeyOrigin: string | undefined;
   readonly #apiKey: string | undefined;
   readonly #fetch: typeof globalThis.fetch;
   readonly #userAgent: string;
@@ -193,10 +205,16 @@ export class TrendsFast {
 
   constructor(options: TrendsFastOptions = {}) {
     const env = options.env ?? process.env;
-    const stored =
+    const saved =
       options.apiKey || env[API_KEY_ENV]?.trim() || options.useStoredCredentials === false
         ? null
         : readStoredCredentials(options.credentialsPath ?? credentialsPath(env));
+    // A --base-url or TRENDSFAST_BASE_URL that names another origin must not receive the key
+    // saved for this one: the key is bound to the origin recorded when it was issued.
+    const requested = options.baseUrl ?? (env[BASE_URL_ENV]?.trim() || undefined);
+    const stored =
+      saved && (requested === undefined || sameOrigin(requested, saved.base_url)) ? saved : null;
+    this.withheldStoredKeyOrigin = saved && !stored ? saved.base_url : undefined;
     if (options.apiKey) {
       this.#apiKey = options.apiKey;
       this.keySource = "option";
@@ -538,7 +556,9 @@ export class TrendsFast {
     if (!this.#apiKey)
       throw new AuthRequiredError(
         "AUTH_REQUIRED",
-        "No TrendsFast API key: run `trendsfast login`, or set TRENDSFAST_API_KEY to a key from https://trendsfast.com/dashboard/api-keys.",
+        this.withheldStoredKeyOrigin
+          ? `Your saved TrendsFast key belongs to ${this.withheldStoredKeyOrigin} and is never sent to ${this.baseUrl}. Remove --base-url or TRENDSFAST_BASE_URL to use it, or set TRENDSFAST_API_KEY. Nothing was sent.`
+          : "No TrendsFast API key: run `trendsfast login`, or set TRENDSFAST_API_KEY to a key from https://trendsfast.com/dashboard/api-keys.",
         "auth",
       );
     const url = new URL(path, this.baseUrl);
