@@ -49,3 +49,11 @@ export function failure(ctx: Context, error: unknown): number {
   ctx.err(`Error: ${error instanceof Error ? error.message : String(error)}`);
   return 7;
 }
+
+/** Why a command has no key although one is saved: the saved key belongs to another origin
+ * than the one this command names, and is never sent there. Empty when that is not the case. */
+export function withheldKeyNote(client: { withheldStoredKeyOrigin?: string; baseUrl: string }): string {
+  return client.withheldStoredKeyOrigin
+    ? ` Your saved key belongs to ${client.withheldStoredKeyOrigin} and is never sent to ${client.baseUrl}; remove --base-url or TRENDSFAST_BASE_URL to use it.`
+    : "";
+}

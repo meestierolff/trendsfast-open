@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { CONTEXT_ID, KEY, api, json, resultFor, run, tempHome } from "./helpers.mjs";
+import { CONTEXT_ID, KEY, api, fakeFetch, json, resultFor, run, tempHome, walletBody } from "./helpers.mjs";
 
 const signedIn = () => {
   const { env, home } = tempHome();
@@ -77,6 +77,39 @@ describe("paid commands", () => {
     assert.equal(JSON.parse(readFileSync(path, "utf8")).version, "trends-api-v3");
     assert.equal(readFileSync(join(result.io.cwd, ".trendsfast", ".gitignore"), "utf8").trim().split("\n").pop(), "*");
     assert.match(result.stderr, /Full response written to .*customers\.json/);
+  });
+
+  it("never writes through links a cloned project plants in .trendsfast/ (audit 2026-11-07)", async () => {
+    const { mkdirSync, mkdtempSync, symlinkSync, writeFileSync, lstatSync, existsSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const victim = mkdtempSync(join(tmpdir(), "tf-victim-"));
+    const target = join(victim, "zshrc");
+    writeFileSync(target, "export SAFE=1\n");
+
+    // A leaf link: .trendsfast/customers.json -> ~/.zshrc. The link is replaced, the target kept.
+    const leaf = mkdtempSync(join(tmpdir(), "tf-cwd-"));
+    mkdirSync(join(leaf, ".trendsfast"));
+    symlinkSync(target, join(leaf, ".trendsfast", "customers.json"));
+    const wrote = await run(["customers", "--max-credits", "10", "-o", "customers.json"], { env: signedIn().env, fetch: api().fetch, cwd: leaf });
+    assert.equal(wrote.code, 0, wrote.stderr);
+    assert.equal(readFileSync(target, "utf8"), "export SAFE=1\n");
+    assert.ok(lstatSync(join(leaf, ".trendsfast", "customers.json")).isFile());
+
+    // A dangling .gitignore link must not create a file outside the project.
+    const dangling = mkdtempSync(join(tmpdir(), "tf-cwd-"));
+    mkdirSync(join(dangling, ".trendsfast"));
+    symlinkSync(join(victim, "created-by-link"), join(dangling, ".trendsfast", ".gitignore"));
+    assert.equal((await run(["customers", "--max-credits", "10", "-o", "customers.json"], { env: signedIn().env, fetch: api().fetch, cwd: dangling })).code, 0);
+    assert.equal(existsSync(join(victim, "created-by-link")), false);
+    assert.ok(lstatSync(join(dangling, ".trendsfast", ".gitignore")).isFile());
+
+    // A directory link: .trendsfast -> elsewhere. Refused; nothing written there.
+    const linked = mkdtempSync(join(tmpdir(), "tf-cwd-"));
+    symlinkSync(victim, join(linked, ".trendsfast"));
+    const refused = await run(["customers", "--max-credits", "10", "-o", "customers.json"], { env: signedIn().env, fetch: api().fetch, cwd: linked });
+    assert.notEqual(refused.code, 0);
+    assert.equal(existsSync(join(victim, "customers.json")), false);
+    assert.equal(existsSync(join(victim, ".gitignore")), false);
   });
 
   it("reports an unknown outcome with exit 6 and the command to read it, never a new ID", async () => {
@@ -228,6 +261,28 @@ describe("free reads", () => {
     assert.match(stdout, /expires 2027-01-27/);
     assert.match(stdout, /Balance: 90 credits/);
     assert.ok(!stdout.includes(KEY));
+  });
+
+  it("never sends the saved key to an origin named by --base-url or TRENDSFAST_BASE_URL (audit 2026-11-07)", async () => {
+    const { env, home } = tempHome();
+    const { mkdirSync, writeFileSync } = await import("node:fs");
+    mkdirSync(join(home, ".config", "trendsfast"), { recursive: true });
+    writeFileSync(
+      join(home, ".config", "trendsfast", "credentials.json"),
+      JSON.stringify({ api_key: KEY, key_id: "k", project_id: "p", project_name: "Fixture Studio", scopes: [], expires_at: "2027-01-27T00:00:00Z", base_url: "https://trendsfast.com", created_at: "" }),
+    );
+    for (const [argv, extra] of [
+      [["credits", "--base-url", "https://attacker.example"], {}],
+      [["whoami"], { TRENDSFAST_BASE_URL: "https://attacker.example" }],
+      [["context", "--base-url", "https://attacker.example"], {}],
+    ]) {
+      const { fetch, calls } = fakeFetch(() => json(walletBody));
+      const { code, stdout, stderr } = await run(argv, { env: { ...env, ...extra }, fetch });
+      assert.notEqual(code, 0, `${argv.join(" ")} must not succeed`);
+      assert.equal(calls.length, 0, `${argv.join(" ")} sent ${calls.length} request(s)`);
+      assert.match(stdout + stderr, /belongs to https:\/\/trendsfast\.com/);
+      assert.ok(!(stdout + stderr).includes(KEY));
+    }
   });
 
   it("says when nobody is signed in", async () => {

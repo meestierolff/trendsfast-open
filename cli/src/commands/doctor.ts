@@ -40,7 +40,12 @@ export async function doctor(ctx: Context, flags: Record<string, unknown>): Prom
     add({
       name: "credentials",
       status: "fail",
-      detail: status?.status === "waiting" ? "no key yet; a sign-in is waiting" : "no key",
+      detail:
+        status?.status === "waiting"
+          ? "no key yet; a sign-in is waiting"
+          : client.withheldStoredKeyOrigin
+            ? `the saved key belongs to ${client.withheldStoredKeyOrigin} and is not sent to ${client.baseUrl}`
+            : "no key",
       fix: status?.status === "waiting" ? "Finish signing in in the browser, then run trendsfast whoami." : "Run trendsfast login --background and finish in the browser.",
       exit: 2,
     });

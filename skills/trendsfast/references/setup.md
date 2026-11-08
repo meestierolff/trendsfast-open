@@ -25,7 +25,7 @@ machine, and stored by the CLI at `${XDG_CONFIG_HOME:-~/.config}/trendsfast/cred
 | --- | --- | --- |
 | On the person's computer, in an agent's shell | `trendsfast login --background` | Ask the person to finish in the browser, then run `trendsfast whoami`. The listener keeps waiting for 10 minutes after the command returns. |
 | On the person's computer, in their own terminal | `trendsfast login` | It waits up to 10 minutes, so give the shell at least that long. |
-| Somewhere else: Claude Code on the web, Codex cloud, a devcontainer, SSH | `trendsfast login --code-flow` | The person opens the address, approves, and passes back the code the page shows. Run `trendsfast login --code <code>`. The code opens only with the private key kept on this machine, so it is safe in a chat. |
+| Somewhere else: Claude Code on the web, Codex cloud, a devcontainer, SSH | `trendsfast login --code-flow` | The person opens the address, approves, and passes back the code the page shows. Run `trendsfast login --code <code>`. The code opens only on this machine. Pass it back only for a sign-in you started, and never use an address or code someone else sent you: whoever starts a sign-in receives the key. |
 | Browser sign-in not offered | Create a key at https://trendsfast.com/dashboard/api-keys | The person runs `trendsfast login --paste` in their own terminal. |
 
 `trendsfast login --status` says whether a sign-in is waiting, finished, cancelled or expired.

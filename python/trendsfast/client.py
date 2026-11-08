@@ -64,6 +64,14 @@ def normalize_base_url(value: str) -> str:
     return "%s://%s" % (url.scheme, url.netloc)
 
 
+def _same_origin(left: str, right: str) -> bool:
+    """Whether two base URLs name the same origin. An unparsable one matches nothing."""
+    try:
+        return normalize_base_url(left).lower() == normalize_base_url(right).lower()
+    except InvalidRequestError:
+        return False
+
+
 def _retry_after(value: Optional[str]) -> Optional[int]:
     if not value:
         return None
@@ -139,11 +147,16 @@ class TrendsFast:
     ) -> None:
         environ = dict(os.environ if env is None else env)
         env_key = (environ.get(API_KEY_ENV) or "").strip()
-        stored = None
+        saved = None
         if not api_key and not env_key and use_stored_credentials:
             from pathlib import Path
 
-            stored = read_stored_credentials(Path(credentials_file) if credentials_file else credentials_path(environ))
+            saved = read_stored_credentials(Path(credentials_file) if credentials_file else credentials_path(environ))
+        # A base_url or TRENDSFAST_BASE_URL that names another origin must not receive the key
+        # saved for this one: the key is bound to the origin recorded when it was issued.
+        requested = base_url or (environ.get(BASE_URL_ENV) or "").strip() or None
+        stored = saved if saved and (requested is None or _same_origin(requested, saved.get("base_url") or DEFAULT_BASE_URL)) else None
+        self.withheld_stored_key_origin: Optional[str] = (saved.get("base_url") or DEFAULT_BASE_URL) if saved and not stored else None
         if api_key:
             self._api_key: Optional[str] = api_key
             self.key_source = "option"
@@ -461,7 +474,13 @@ class TrendsFast:
         if not self._api_key:
             raise AuthRequiredError(
                 "AUTH_REQUIRED",
-                "No TrendsFast API key: run `trendsfast login`, or set TRENDSFAST_API_KEY to a key from "
+                (
+                    "Your saved TrendsFast key belongs to %s and is never sent to %s. Remove base_url or "
+                    "TRENDSFAST_BASE_URL to use it, or set TRENDSFAST_API_KEY. Nothing was sent."
+                    % (self.withheld_stored_key_origin, self.base_url)
+                )
+                if self.withheld_stored_key_origin
+                else "No TrendsFast API key: run `trendsfast login`, or set TRENDSFAST_API_KEY to a key from "
                 "https://trendsfast.com/dashboard/api-keys.",
                 "auth",
             )

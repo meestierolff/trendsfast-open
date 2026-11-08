@@ -8,7 +8,7 @@ import { OPERATIONS, READ_CREDITS, UUID_PATTERN, creditsLabel, findProduct, type
 import { credentialsPath, keyPrefix, readStoredCredentials } from "../sdk/credentials.js";
 import { TrendsFastError } from "../sdk/errors.js";
 import { emitResult } from "./query.js";
-import { failure, outputFormat, printJson, writeOutput } from "./shared.js";
+import { failure, outputFormat, printJson, withheldKeyNote, writeOutput } from "./shared.js";
 
 async function read<T>(
   ctx: Context,
@@ -97,7 +97,12 @@ export async function whoami(ctx: Context, flags: Record<string, unknown>): Prom
   if (!client.hasApiKey) {
     const status = effectiveLoginStatus(ctx.env, ctx.io.now());
     const waiting = status?.status === "waiting";
-    if (json) printJson(ctx, { signed_in: false, login: status ? { status: status.status, mode: status.mode, expires_at: status.expires_at } : null });
+    if (json)
+      printJson(ctx, {
+        signed_in: false,
+        login: status ? { status: status.status, mode: status.mode, expires_at: status.expires_at } : null,
+        ...(client.withheldStoredKeyOrigin ? { saved_key_origin: client.withheldStoredKeyOrigin } : {}),
+      });
     else
       ctx.out(
         waiting
@@ -106,7 +111,7 @@ export async function whoami(ctx: Context, flags: Record<string, unknown>): Prom
             : `Not signed in yet: a sign-in is waiting in the browser until ${status!.expires_at.slice(11, 16)} UTC. Run \`trendsfast whoami\` again after finishing it.`
           : status && status.status !== "signed_in"
             ? `Not signed in: the last sign-in was ${status.status}. Run \`trendsfast login --background\` and finish in the browser.`
-            : "Not signed in. Run `trendsfast login --background` and finish in the browser, or set TRENDSFAST_API_KEY.",
+            : `Not signed in. Run \`trendsfast login --background\` and finish in the browser, or set TRENDSFAST_API_KEY.${withheldKeyNote(client)}`,
       );
     return 2;
   }
