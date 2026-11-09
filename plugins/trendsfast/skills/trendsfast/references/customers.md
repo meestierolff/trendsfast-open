@@ -25,6 +25,28 @@ Send no filters unless the user asks; the product applies its own lens. `lookbac
 - `brief`: what the items are good for, the coverage gaps and next steps. `coverage`: which
   sources were read and which were not.
 
+## Answer the posts worth answering
+
+The result lists the Reddit threads to answer first, best first: the first three as the
+handout's `reply_first`. Each gives its `intent` (asks for a
+tool, compares options, wants out of a tool, or describes the problem), its age and comments when
+read, and `mention`: what a reply may do with the product under that community's rules.
+
+- `NAME_AND_LINK`: answer in full first, then name the product once as one option, say it is
+  yours, and link it.
+- `NAME_ONLY`: the same, without the link.
+- `NOT_IN_REPLY`: answer without the product.
+
+Draft each reply for the person to post from their own account, one thread at a time. A reply
+answers in its own words before anything else, and a post asking for no tool gets no pitch.
+Never post for them, never use a second account and never ask for votes. Answer the newest
+first: a thread over a week old is rarely read.
+
+For the person's own posts: their true story with real numbers and its lesson, or an experiment
+where the product is one ingredient; never an announcement. One community per story: the same
+story in several communities within days gets removed. The questions in these threads are also
+the pages worth writing, one question to a page, answered first.
+
 **Done when:** each problem you report cites its source link and observed time, the coverage
 gaps are stated, and any draft respects the community's rules.
 
