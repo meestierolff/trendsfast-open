@@ -28,8 +28,26 @@ Over MCP, `trendsfast_niche_trends` with these arguments (REST: `POST /v3/trends
   named was matched afterwards.
 - `coverage`: which sources answered and which did not.
 
+## Get mentioned where the assistants read
+
+An assistant recommends what the pages it reads mention. The pages the answers cite are
+`cited_pages` in the full result, best first, and the first three a brand can act on are the
+handout's `get_mentioned`. Only Perplexity searches the web here, so its citations are the ones
+listed. Each page has its `kind` and its `move`:
+
+- `ANSWER_THE_THREAD`, a Reddit or forum thread: read the community's rules first and draft a
+  reply that answers in its own words before any product, as [customers.md](customers.md) says.
+- `ASK_TO_BE_LISTED`, a list or comparison: draft a short note asking its author to consider the
+  brand, with one concrete reason. The person sends it.
+- `GET_REVIEWED`, a review or listing site: list the product there and ask real users for honest
+  reviews. Never write one.
+
+Run Search again after a month to see whether the answers changed. Never promise that an
+assistant will name the brand.
+
 **Done when:** you state, per assistant, whether it named the brand and which competitors and
-domains it cited, each search figure has its unit and period, and gaps are stated.
+domains it cited, each search figure has its unit and period, each cited page to act on has its
+move, and gaps are stated.
 
 Next: [competitors.md](competitors.md) for what they post, [market-brief.md](market-brief.md)
 for a one-page brief.
