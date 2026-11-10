@@ -1,8 +1,8 @@
 # Search
 
-What people search for around the brand's niche, and what AI assistants answer to the
-category's buyer question: the brands they name, whether that includes the brand or its
-competitors, and the sources they cite. It reads Google Trends, ChatGPT, Claude, Gemini and
+What people search for around the brand's niche, and what AI assistants answer, searching the
+web, to the question a buyer in the brand's category would ask: the brands they name, whether
+that includes the brand or its competitors, and the sources they cite. It reads Google Trends, ChatGPT, Claude, Gemini and
 Perplexity. Product `search`, 35 credits; the price covers four live AI answers.
 
 ## Run
@@ -18,16 +18,17 @@ Perplexity. Product `search`, 35 credits; the price covers four live AI answers.
 - Search items: the query, its relative interest (0-100) or modeled monthly demand, and the
   observed period. A relative index is not a volume; say which one it is.
 - `ai_answers`: per assistant, `mentions_you` (whether it names the brand), `competitors_named`,
-  the other `names` in its order, and `cited_domains`. The question carried no brand; who is
-  named was matched afterwards.
+  the other `names` in its order, and `cited_domains`. The question is built from the brand's
+  confirmed category and audience and never names the brand; who is named was matched
+  afterwards.
 - `coverage`: which sources answered and which did not.
 
 ## Get mentioned where the assistants read
 
 An assistant recommends what the pages it reads mention. The pages the answers cite are
 listed in the full result on the REST API, best first, and the first three a brand can act on
-are the handout's `get_mentioned`. Only Perplexity searches the web here, so its citations are the ones
-listed. Each page has its `kind` and its `move`:
+are the handout's `get_mentioned`. All four assistants search the web, so each can cite what it read.
+Each page has its `kind` and its `move`:
 
 - `ANSWER_THE_THREAD`, a Reddit or forum thread: read the community's rules first and draft a
   reply that answers in its own words before any product, as [customers.md](customers.md) says.
