@@ -70,3 +70,8 @@ typed or a video's link. See the [privacy policy](https://trendsfast.com/privacy
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The server can also offer `trendsfast_thread_check` (1 credit, at most 100 per project per UTC
+day), behind a switch that is off by default. It checks a Reddit thread's visibility, counts,
+top comments where permitted, and mention mode. UNKNOWN costs zero; an identical request ID
+replays free until its expiry. It never posts.

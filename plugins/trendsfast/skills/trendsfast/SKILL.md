@@ -49,6 +49,8 @@ Cheaper reads collect nothing new:
 
 A video vs. its creator's posts: `trendsfast_video_outlier` (5 credits, only if found).
 
+When offered, `trendsfast_thread_check` (1 credit): [thread checks](references/customers.md).
+
 ## Spend once
 
 - **Consent:** name the product and price. A direct request is consent for one call; run nothing
@@ -70,7 +72,7 @@ A video vs. its creator's posts: `trendsfast_video_outlier` (5 credits, only if 
 - **Coverage:** name uncovered channels; unobserved is not "nothing happened".
 - **Rising** only from an item's `topic_history`.
 
-Done when the answer cites links, states gaps and names its request or result ID.
+Done: cited links, stated gaps, request or result ID.
 
 ## Boundaries
 

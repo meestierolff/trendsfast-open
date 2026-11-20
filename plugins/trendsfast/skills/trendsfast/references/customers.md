@@ -52,3 +52,10 @@ gaps are stated, and any draft respects the community's rules.
 
 Next: [trending.md](trending.md) for what is gaining attention, [content-plan.md](content-plan.md)
 to turn both into a week of posts.
+
+When offered, `trendsfast_thread_check` (1 credit) takes `request_id`, `max_credits: 1`,
+`input: {url}`. It checks state, counts, five permitted comments and mention mode. Default off;
+100/project/day UTC. UNKNOWN costs zero; same-ID replay is free until `expires_at`, with rights
+rechecked. Never reply to a locked or removed thread.
+
+Free `trendsfast_read_result` filters `community`, `intent`, `platform` before paging; cursors keep filters. Results hold excerpts/history; briefs hold full plans/winners. Whole limits.
